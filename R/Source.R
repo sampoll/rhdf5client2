@@ -10,6 +10,10 @@ setClass("Source", representation(endpoint="character", type="character"))
 #' @name Source
 #' @param endpoint URL and port for server 
 #' @param type Either 'h5serv' or 'hsds'
+#' @examples
+#' src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
+#' src.test <- Source('http://54.87.224.110:5000', 'h5serv')
+#' src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
 #' @export
 Source <- function(endpoint, type='hsds')  {
   if (!(type %in% c('h5serv', 'hsds')))
@@ -30,11 +34,33 @@ setGeneric('files', function(object, rootdir) standardGeneric('files'))
 #' @param rootdir A slash-separated directory in the Source file system. 
 #' @export
 setMethod('files', c("Source", "character"), 
-  function(object, rootdir = '/hdfgroup/data')  {
+  function(object, rootdir)  {
+    ll <- domainContents(object, rootdir)
+    vapply(ll, function(l) l$filename, character(1))
+  })
+
+setMethod('files', c("Source", "missing"),  
+  function(object) { 
+    files(object, '/hdfgroup/org') 
+  })
+
+
+# private
+domainContents <- function(object, rootdir = '/hdfgroup/org')  {
   if (!(is(object, "Source")))
     stop("getDomains called on a non-Source object")
 
-  retvec <- c()
+  # result list
+  rlistsz <- 1000
+  rlist <- vector("list", rlistsz)
+  nrlist <- 1
+
+  append_to_results <- function(fn, ft)   {
+    rlist[[nrlist]] <<- list(filename=fn, filetype=ft)
+    nrlist <<- nrlist + 1
+    if (nrlist >= rlistsz)  
+      stop("list overflow")
+  }
 
 #' The h5serv API does not have a GET /domains method, so we need
 #' to descend the tree to the requested domain node by UUID's.
@@ -90,40 +116,50 @@ setMethod('files', c("Source", "character"),
       links <- response[['links']]
       for (lk in links)  {
         if (lk[['class']] == 'H5L_TYPE_HARD')  {             # a subdirectory
-          retvec <- c(retvec, paste0(lk[['title']], rootdir))
+          append_to_results(paste0(lk[['title']], rootdir), 'directory')
         } else if (lk[['class']] == 'H5L_TYPE_EXTERNAL')  {  # a file
-          retvec <- c(retvec, lk[['h5domain']])
+          append_to_results(lk[['h5domain']], 'file')
         }
       }
 
-    } else  {
-      retvec <- c(rootdir)    # domain is a File
+    } else  {  # 'self' signals that rootdir *is* a file 
+      append_to_results(rootdir, 'self')
     }
   }
   else  { # 'hsds'
-    append_if_h5_file <- function(ll, ff)  {
-      if ('class' %in% names(ll) && 'name' %in% names(ll) &&  
-         ( ll[['class']] == 'domain' || ll[['class']] == 'folder' ) )
-            ff <- c(ff, ll[['name']])   # a File
-      ff
-    }
 
-    request <- paste0(object@endpoint, "/domains?domain=", rootdir, "/")
+    # no postpended slash gets the type of the object
+    request <- paste0(object@endpoint, "/domains?domain=", rootdir)
     response <- submitRequest(request)
-    domains <- response[['domains']]
-    for (domain in domains)  {
-      retvec <- append_if_h5_file(domain, retvec)
+
+    if ('domains' %in% names(response) && length(response[['domains']]) > 0)  {
+
+      # with postpended slash gets directory contents
+      if ('root' %in% names(response[['domains']][[1]]) && 
+          response[['domains']][[1]][['root']] != 'None')  {
+        fn <- rootdir
+        ft <- 'self'
+        append_to_results(fn, ft)
+      } else  {
+        request <- paste0(object@endpoint, "/domains?domain=", rootdir, "/")
+        response <- submitRequest(request)
+        domains <- response[['domains']]
+        for (domain in domains)  {
+          if ('class' %in% names(domain) && 'name' %in% names(domain) && 
+             (domain[['class']] == 'domain' || domain[['class']] == 'folder'))  {
+            fn <- domain[['name']]
+            ft <- 'directory'
+            if (domain[['class']] == 'domain') 
+              ft <- 'file'
+            append_to_results(fn, ft)
+          }
+        }
+      }
     }
-
   }
-  retvec
+  rlist[-which(sapply(rlist, is.null))]
 
-})
-
-
-setMethod('files', c("Source", "missing"),  
-  function(object) { files(object, '/hdfgroup/data') })
-
+}
 
 # private
 submitRequest <- function(req)  {
@@ -133,20 +169,6 @@ submitRequest <- function(req)  {
   jsn <- readBin(rsp$content, what="character")
   rjson::fromJSON(jsn)
 }
-
-# hide ugly stuff
-lwhich <- function(ll, fl)  {
-  which(vapply(ll, fl, logical(1)))
-}
-
-
-# Question: from the domain (file), how do we obtain the group/dataset 
-# hierarchy inside the file? 
-# Plan: look at how John does it in function visit.
-
-
-
-
 
 # Dataset object: everything necessary to acquire data from the dataset
 # h5serv File 
