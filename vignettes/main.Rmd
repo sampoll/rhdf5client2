@@ -1,0 +1,84 @@
+---
+title: "Rhdf5client2 Vignette"
+author: "Sam"
+date: "9/1/2018"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rhdf5client2)
+```
+
+## Source
+
+An object of type Source is a HDFGroup server running on a machine. The 
+constructor requires the endpoint and server type, either `h5serv` or `hsds`. 
+If the type is not specified, the server will be assumed to be `hsds`
+
+```{r}
+test_ipaddr <- '54.172.161.55'    # today's address for test machine
+test_endpoint <- paste0('http://', test_ipaddr, ':5000')
+src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
+src.test <- Source(test_endpoint, 'h5serv')
+src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
+```
+
+The routine `domains` is provided for inspection of the server hierarchy.
+This is the hierarchy that maps approximately to the directory structure of
+the server file system. The purpose of this routine is to assist the user
+in locating HDF5 files. 
+
+The user needs to know the root domain of the server. This information 
+should be published with the endpoint. For an h5serv server, the default 
+`hdfgroup.org` is a good guess, because this value is preconfigured and 
+there is not often a reason to wish to change it. 
+
+```{r}
+domains(src.chan)
+domains(src.chan, 'public/hdfgroup/org')
+```
+
+```{r}
+domains(src.test, 'data/hdfgroup/org')
+domains(src.test, 'subdira/data/hdfgroup/org')
+```
+
+For an hsds server, the root domain could be anything, so the administrator
+has to publish it.
+
+```{r}
+domains(src.hsds, '/home/jreadey')
+domains(src.hsds, '/home/jreadey/HDFLabTutorial')
+```
+
+## File
+
+An object of class File represents a HDF5 file. The object is constructed 
+by providing a source and a file domain. (TODO: if the domain is not a 
+real file domain, this crashes with an unhelpful error message.)
+
+```{r}
+f0 <- File(src.hsds, '/home/spollack/testzero.h5')
+f1 <- File(src.chan, 'tenx_100k_sorted.h5s.channingremotedata.org')
+f2 <- File(src.test, 'fileone.subdira.data.hdfgroup.org')
+```
+
+The function `listDatasets` lists the datasets in a file.
+
+```{r}
+listDatasets(f0)
+listDatasets(f1)
+listDatasets(f2)
+```
+
+
+
+
+
+
+

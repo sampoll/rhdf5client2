@@ -1,4 +1,4 @@
-setClass("File", representation(src="Source", domain="character"))
+setClass("File", representation(src="Source", domain="character", dsetdf="data.frame"))
 
 #' constructor for a File 
 #' @name File
@@ -16,28 +16,24 @@ setClass("File", representation(src="Source", domain="character"))
 #' listDatasets(f)
 #' @export
 File <- function(src, domain)  {
-  res <- rhdf5client2:::domainContents(src, domain)
-  if (res[[1]]$filetype != 'self')
-    stop("not a file")
-
-  # h5serv requires dots (not slash) here and no leading dot
-  if (src@type == 'h5serv')  {      
-    domain <- gsub(.Platform$file.sep, '.', domain)
-    if (substr(domain, 1, 1) == '.') 
-      domain <- substr(domain, 2, nchar(domain))
-  }
-  obj <- new("File", src=src, domain=domain)
+  request <- paste0(src@endpoint, '?domain=', domain)
+  try(response <- submitRequest(request))  # crashes if not a file domain
+  dsetdf <- findDatasets(src, domain)
+  obj <- new("File", src=src, domain=domain, dsetdf=dsetdf)
 }
 
 #' search inner file hierarchy
 #' @name file an object of type File
-#' @return a data frame with dataset inner-paths and UUIDs
+#' @return a list of inner-paths 
 #' @export
 listDatasets <- function(file)  {
-  if (!('File' %in% class(file)))
-    stop("not a file")
+  file@dsetdf[['paths']]
+}
 
-  request <- paste0(file@src@endpoint, '?domain=', file@domain)
+#' private
+findDatasets <- function(src, domain)  {
+
+  request <- paste0(src@endpoint, '?domain=', domain)
   response <- submitRequest(request)
   fileroot <- response$root
 
@@ -48,7 +44,7 @@ listDatasets <- function(file)  {
 
   search <- function(uuid, path, ee)  {
     # ee$results <- c(ee$results, path)
-    request <- paste0(file@src@endpoint, '/groups/', uuid, '/links?domain=', file@domain)
+    request <- paste0(src@endpoint, '/groups/', uuid, '/links?domain=', domain)
     response <- submitRequest(request)
     for (link in response[['links']])  {
       if ('collection' %in% names(link) && link[['collection']] == 'groups')  {
@@ -65,7 +61,8 @@ listDatasets <- function(file)  {
   }
 
   search(fileroot, '', eee)
-  data.frame(paths=eee$results, uuids=eee$uuids)
+  data.frame(paths=eee$results, uuids=eee$uuids, stringsAsFactors = FALSE)
 
 }
+
 

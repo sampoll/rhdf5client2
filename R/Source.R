@@ -22,26 +22,26 @@ Source <- function(endpoint, type='hsds')  {
   # member root id also?
 }
 
-#' files find files and subdirectories of a domain
+#' domains find files and subdirectories of a domain
 #'
 #' The user needs to give the domain to start in. The search
 #' will be non-recursive. I.e., output for domain '/home/jreadey/' will 
 #' not return the files in '/home/jreadey/HDFLabTutorial/'
-setGeneric('files', function(object, rootdir) standardGeneric('files'))
+setGeneric('domains', function(object, rootdir) standardGeneric('domains'))
 
-#' @name files
+#' @name domains
 #' @param object An object of type Source 
 #' @param rootdir A slash-separated directory in the Source file system. 
 #' @export
-setMethod('files', c("Source", "character"), 
+setMethod('domains', c("Source", "character"), 
   function(object, rootdir)  {
     ll <- domainContents(object, rootdir)
     vapply(ll, function(l) l$filename, character(1))
   })
 
-setMethod('files', c("Source", "missing"),  
+setMethod('domains', c("Source", "missing"),  
   function(object) { 
-    files(object, '/hdfgroup/org') 
+    domains(object, '/hdfgroup/org') 
   })
 
 
@@ -99,16 +99,28 @@ domainContents <- function(object, rootdir = '/hdfgroup/org')  {
       v <- vapply(links, function(lk) { 
         'title' %in% names(lk) && lk[['title']] == pth[length(pth)] }, 
         logical(1))
-      if (!any(v))  
-        stop(paste0("domain ",rootdir, " not found"))
-
-      link <- links[[which(v)]]
-      nextid <- link[['id']]
-      dstr <- paste0(pth[length(pth)], '.', dstr)
-      pth <- pth[-length(pth)]
-
+      if (any(v))  {
+        link <- links[[which(v)]]
+        nextid <- link[['id']]
+        dstr <- paste0(pth[length(pth)], '.', dstr)
+        pth <- pth[-length(pth)]
+      }
+      else  {    # special case: rootdir is a file 
+        v <- vapply(links, function(lk) { 
+          'class' %in% names(lk) && lk[['class']] == 'H5L_TYPE_EXTERNAL' && 
+          'h5domain' %in% names(lk) && lk[['h5domain']] == pth[length(pth)] }, 
+          logical(1))
+        if (any(v))  {
+          link <- links[[which(v)]]
+          pth <- c()
+        } else  {
+          stop(paste0("domain ",rootdir, " not found"))
+        }
+      }
     }
 
+# Why was I checking length(link) =?= 0 here?
+#
     if (length(link) == 0 || 
         link[['class']] == 'H5L_TYPE_HARD')  {  # domain is a directory
       request <- paste0(object@endpoint, "/groups/", nextid, "/links")
