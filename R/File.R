@@ -4,16 +4,6 @@ setClass("File", representation(src="Source", domain="character", dsetdf="data.f
 #' @name File
 #' @param src an object of type Source
 #' @param domain domain string
-#' @examples
-#' src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
-#' src.test <- Source('http://54.87.224.110:5000', 'h5serv')
-#' src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
-#' f <- File(src.test, '/fileone/subdirb/data/hdfgroup/org')
-#' listDatasets(f)
-#' f <- File(src.test, '/filetwo/subdirb/data/hdfgroup/org')
-#' listDatasets(f)
-#' f <- File(src.hsds, '/home/spollack/testzero.h5')
-#' listDatasets(f)
 #' @export
 File <- function(src, domain)  {
   request <- paste0(src@endpoint, '?domain=', domain)

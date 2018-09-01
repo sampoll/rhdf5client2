@@ -76,8 +76,15 @@ listDatasets(f1)
 listDatasets(f2)
 ```
 
+## Dataset
 
+Construct a Dataset object from a File and a dataset path.
 
+```{r}
+d0 <- Dataset(f0, '/grpA/grpAB/dsetX')
+d1 <- Dataset(f1, '/assay001')
+d2 <- Dataset(f2, '/grpB/grpC/dataC')
+```
 
 
 
