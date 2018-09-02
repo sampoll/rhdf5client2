@@ -23,40 +23,48 @@ Dataset <- function(file, path)  {
 }
 
 
+
 #' getData basic data-fetching functionality
 #' @name getData
 #' @param dataset an object of type Dataset
 #' @param slices array of valid character slices in R format
 #' @export
-getData <- function(dataset, slices)  {
+getData <- function(dataset, slices, transfermode = 'JSON')  {
   slices <- checkSlices(dataset@shape, slices)
   if (length(slices) == 0)
     stop("bad slices")
+  if (!(transfermode %in% c('JSON', 'binary')))  {
+    warning('unrecognized transfermode, using JSON')
+    transfermode <- 'JSON'
+  }
 
-  # convert to vector
+  sdims <- vapply(slices, slicelen, numeric(1))
   slices <- vapply(slices, function(s) { s }, character(1))
-
   sel <- paste0('[', paste(slices, collapse=','), ']')
   endpoint <- dataset@file@src@endpoint
   domain <- dataset@file@domain
 
   request <- paste0(endpoint, '/datasets/', dataset@uuid, 
     '/value?domain=', domain, '&select=', sel)
+  response <- submitRequest(request, transfermode=transfermode)
 
-  response <- submitRequest(request)
-  response$value
-
-  # TODO: do.call(rbind, response$value) works for a 2D matrix
-  # Use abind::abind to do the recursive multi-dimensional case.
-
-  # Something like this:
-
-  # multibind <- function(L, nl)  {
-  #   if (nl < ndim)  {
-  #     L <- lapply(L, function(LL) multibind(LL, along=nl-1))
-  #   } 
-  #   do.call(abind, L, along=nl)
-  # }    
+  nn <- prod(sdims)
+  A <- array(rep(0, nn))
+  if (transfermode == 'JSON')  {
+    result <- response$value
+    # unpack response into an R array 
+    A[1:nn] <- vapply(1:nn, function(i) {
+      idx <- csub4idx(sdims, i)
+      result[[idx]]
+    }, numeric(1))
+  } else if (transfermode == 'binary')  {
+    result <- extractBinary(dataset@type, nn, response)
+    A[1:nn] <- vapply(1:nn, function(i) {
+      idx <- ridx4sub(sdims, csub4idx(sdims, i)) 
+      result[idx]
+    }, numeric(1))
+  }
+  AA <- array(A, dim = sdims)
 
 }
 
@@ -150,3 +158,119 @@ checkSlices <- function(shape, slices)  {
   })
 
 }
+
+# Note: for more than two dimensions, "column-major" means
+# "first-fastest" and "row-major" means "last-fastest"
+
+# private - extract column-major subscripts for linear index
+csub4idx <- function(D, ind)  {
+  m <- length(D)
+  X <- rep(-1, m)
+  off <- ind-1
+  
+  X <- vapply(0:(m-1), function(j)  {
+    if (j == 0)  {
+      s <- off %% D[1]      
+    } else if (j == m-1)  {
+      s <- off %/% prod(D[1:m-1])
+    } else  {
+      s <- (off %/% prod(D[1:j])) %% D[j+1]
+    } 
+    s
+  }, numeric(1))
+  X <- X+1
+  X
+}
+
+# private - extract column-major subscripts for linear index
+rsub4idx <- function(D, ind)  {
+  m <- length(D)
+  X <- rep(-1, m)
+  off <- ind-1
+  
+  X <- vapply(0:(m-1), function(j)  {
+    if (j == 0)  {
+      s <- off %/% prod(D[2:m])
+    } else if (j == (m-1))  {
+      s <- off %% D[m]
+    } else  {
+      s <- (off %/% prod(D[(j+2):m])) %% D[j+1]
+    }
+    s
+  }, numeric(1))
+  X <- X+1
+  X
+}
+
+# private - extract column-major linear index for subscripts
+cidx4sub <- function(D, S)  {
+  m <- length(D)
+  S <- S-1
+  off <- 0
+  for (j in 0:(m-1))  {
+    p <- ifelse(j == 0, 1, prod(D[1:j]))
+    off <- off + S[j+1]*p
+  }
+  off+1
+}
+
+# private - extract row-major linear index for subscripts
+ridx4sub <- function(D, S)  {
+  m <- length(D)
+  S <- S-1
+  off <- 0
+  for (j in 0:(m-1))  {
+    p <- ifelse(j == m-1, 1, prod(D[(j+2):m]))
+    off <- off + S[j+1]*p
+  }
+  off+1
+}
+
+
+
+# private - length of valid (Python) slice
+slicelen <- function(slc)  {
+  ss <- as.numeric(strsplit(slc, ':')[[1]])
+  sdim <- (ss[2]-ss[1]) %/% ss[3]
+  if ((ss[2]-ss[1]) %% ss[3] != 0)
+    sdim <- sdim + 1
+  sdim
+}
+
+
+# private - extract binary data from response
+# reference: https://support.hdfgroup.org/HDF5/doc1.8/RM/PredefDTypes.html
+extractBinary <- function(typ, nele, rsp)  {
+
+  # standard defaults
+  what <- 'integer'
+  size <- NA_integer_
+  signed <- TRUE
+  endian <- .Platform$endian     # just a guess - the server determines the endianness
+
+  df <- strcapture('H5T_([[:alnum:]]*)_([IFUBD])([[:digit:]]+)([LB]E)', typ$base, 
+                   data.frame(cl=character(), wh=character(), sz=integer(), 
+                              en=character(), stringsAsFactors=FALSE))
+  if (nrow(df) != 1) 
+    stop(paste0("binary transfer for type ", typ$base, " not implemented yet"))
+  if (!(df[1,1] %in% c('STD', 'IEEE')))
+    stop(paste0("binary transfer for type ", typ$base, " not implemented yet"))
+
+  if (df[1,2] == 'I' && df[1,3] == '32')  {
+    what <- 'integer'
+    size <- 4
+  } else if (df[1,2] == 'I' && df[1,3] == '64')  {
+    what <- 'integer'
+    size <- 8
+  } else if (df[1,2] == 'F' && df[1,3] == '64')  {
+    what <- 'double'
+    size <- 8
+  } else  {
+    stop(paste0("binary transfer for type ", typ$base, " not implemented yet"))
+  }
+  endian <- ifelse(df[1,4] == 'LE', 'little', 'big')
+  result <- readBin(rsp$content, what=what, n=nele, size=size, signed=signed, endian=endian)
+  result
+
+}
+

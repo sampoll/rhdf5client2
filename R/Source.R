@@ -173,32 +173,19 @@ domainContents <- function(object, rootdir = '/hdfgroup/org')  {
 
 }
 
-# private
-submitRequest <- function(req)  {
-  rsp <- httr::GET(req)
+# private - submit request and handle errors (TODO: more error-checking)
+submitRequest <- function(req, transfermode='JSON')  {
+  if (transfermode == 'JSON')  {
+    rsp <- httr::GET(req)
+  } else if (transfermode == 'binary')  {
+    rsp <- httr::GET(req, add_headers(Accept="application/octet-stream"))
+  }
+
   if (rsp$status_code != 200)
     stop(paste0("bad response, status code ", rsp$status_code))
-  jsn <- readBin(rsp$content, what="character")
-  rjson::fromJSON(jsn)
+
+  if (transfermode == 'JSON')  {
+    rsp <- rjson::fromJSON(readBin(rsp$content, what="character"))
+  } 
+  rsp 
 }
-
-# Dataset object: everything necessary to acquire data from the dataset
-# h5serv File 
-
-# append the file's "title" to the link request: 
-# request <- paste0(<endpoint>, "/groups/", <grpid>, "/links/", <title>)
-# this is a valid request, but the response does not look very useful
-
-# target <- paste0(<endpoint>, "/?host=", <h5domain>)    OR 
-# target <- link[['target']]
-# submitRequest(target)
-# uuid <- response$root
-
-# from target, we can query the database to see what is in the File:
-# database <- paste0(<endpoint>, "/datasets?host=", <h5domain>)    
-# groupbase <- paste0(<endpoint>, "/groups?host=", <h5domain>)    
-# typebase <- paste0(<endpoint>, "/datatype?host=", <h5domain>)    
-
-
-
-

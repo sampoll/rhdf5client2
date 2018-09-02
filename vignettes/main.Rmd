@@ -21,7 +21,7 @@ constructor requires the endpoint and server type, either `h5serv` or `hsds`.
 If the type is not specified, the server will be assumed to be `hsds`
 
 ```{r}
-test_ipaddr <- '54.172.161.55'    # today's address for test machine
+test_ipaddr <- '34.202.237.217'    # today's address for test machine
 test_endpoint <- paste0('http://', test_ipaddr, ':5000')
 src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
 src.test <- Source(test_endpoint, 'h5serv')
@@ -86,6 +86,23 @@ d1 <- Dataset(f1, '/assay001')
 d2 <- Dataset(f2, '/grpB/grpC/dataC')
 ```
 
+The fundamental data retrieval method is `getData`. It's argument is a
+vector of slices of type `character`. Valid slices are `:` (all indices), 
+`1:10` (indices 1 through 10 inclusive), `:10` (same as `1:10`), `5:` 
+(from 5 to the maximum value of the index) and `2:14:4` (from 2 to 14 
+inclusive in increments of 4.)
+
+Note that the slice should be passed in R semantics. I.e., 1 signifies
+the first index and the last element is included in the slice. (Internally,
+rhdf5client2 converts to Python semantics, in which the first index is 0 
+and the last element is excluded. But here, as everywhere in the package,
+all Python details should be hidden from the user.)
+
+```{r}
+apply(getData(d1, c('1:4', '1:27998'), transfermode='JSON'), 1, sum)
+apply(getData(d1, c('1:4', '1:27998'), transfermode='binary'), 1, sum)
+print(getData(d2, c('1:9:3', '1:11:2')))
+```
 
 
 
