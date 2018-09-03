@@ -4,7 +4,7 @@ setClass("File", representation(src="Source", domain="character", dsetdf="data.f
 #' @name File
 #' @param src an object of type Source
 #' @param domain domain string
-#' @export
+#' @export 
 File <- function(src, domain)  {
   request <- paste0(src@endpoint, '?domain=', domain)
   try(response <- submitRequest(request))  # crashes if not a file domain

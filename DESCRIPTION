@@ -3,10 +3,16 @@ Title: Reorganization of rhdf5client code
 Version: 0.0.0.9001
 Authors@R: person("Sam", "Pollack", email = "spollack@jimmy.harvard.edu", role = c("aut", "cre"))
 Description: This package provides access to HDF5 files maintained on two types of remote server provided by the HDFGroup; the obsolescent prototype h5serv server and its successor, the more robust hsds server.
-Depends: R (>= 3.5.1), httr
+Depends: R (>= 3.5.1), httr, DelayedArray, methods, BiocGenerics 
+Imports: tools, S4Vectors, IRanges
 License: None
 Encoding: UTF-8
 LazyData: true
 Suggests: knitr, rmarkdown,
     testthat
 VignetteBuilder: knitr
+Collate: 
+    'Source.R'
+    'File.R'
+    'Dataset.R'
+    'RHDF5Array.R'

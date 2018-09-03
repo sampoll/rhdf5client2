@@ -34,100 +34,102 @@ Dataset <- function(file, path)  {
 #' special case: one-dimensional arrays
 setMethod('[', c("Dataset", "numeric"), 
   function(x, i) {
-    getData(x, list(i), transfermode='JSON')
+    getDataList(x, list(i), transfermode='JSON')
   })
 
 #' special case: two-dimensional arrays
 setMethod('[', c("Dataset", "numeric", "numeric"), 
   function(x, i, j) {
-    getData(x, list(i, j), transfermode='JSON')
+    getDataList(x, list(i, j), transfermode='JSON')
   })
 
-
-
-setGeneric("getData", function(dataset, indices, transfermode) standardGeneric("getData"))
 
 #' getData basic data-fetching functionality 
 #' @name getData
 #' @param dataset an object of type Dataset
-#' @param slices array of valid character slices in R format
+#' @param indices array of valid character slices in R format or list of vectors
 #' @export
-
+setGeneric("getData", function(dataset, indices, transfermode) standardGeneric("getData"))
 setMethod("getData", c("Dataset", "character", "character"),  
-function(dataset, indices, transfermode = 'JSON')  {
-  indices <- checkSlices(dataset@shape, indices)
-  if (length(indices) == 0)
-    stop("bad slices")
-  if (!(transfermode %in% c('JSON', 'binary')))  {
-    warning('unrecognized transfermode, using JSON')
-    transfermode <- 'JSON'
-  }
-
-  sdims <- vapply(indices, slicelen, numeric(1))
-  indices <- vapply(indices, function(s) { s }, character(1))
-  sel <- paste0('[', paste(indices, collapse=','), ']')
-  endpoint <- dataset@file@src@endpoint
-  domain <- dataset@file@domain
-
-  request <- paste0(endpoint, '/datasets/', dataset@uuid, 
-    '/value?domain=', domain, '&select=', sel)
-  response <- submitRequest(request, transfermode=transfermode)
-
-  nn <- prod(sdims)
-  A <- array(rep(0, nn))
-  if (transfermode == 'JSON')  {
-    result <- response$value
-    # unpack response into an R array 
-    A[1:nn] <- vapply(1:nn, function(i) {
-      idx <- csub4idx(sdims, i)
-      result[[idx]]
-    }, numeric(1))
-  } else if (transfermode == 'binary')  {
-    result <- extractBinary(dataset@type, nn, response)
-    A[1:nn] <- vapply(1:nn, function(i) {
-      idx <- ridx4sub(sdims, csub4idx(sdims, i)) 
-      result[idx]
-    }, numeric(1))
-  }
-  AA <- array(A, dim = sdims)
-
-})
-
-#' getData fetch data by array-indices 
-#' @name getData
-#' @param dataset an object of type Dataset
-#' @param indices list of vectors of indices. At present, each index
-#' array must translate to one slice. E.g., c(2, 4, 6, 8) is OK because
-#' it is one slice ('2:8:2'), but c(2, 4, 7, 9) is not OK because it
-#' is two slices ('2:4:2' and '7:9:2')x.
-#' @export
+  function(dataset, indices, transfermode)  {
+    getDataVec(dataset, indices, transfermode)
+  })
+setMethod("getData", c("Dataset", "character", "missing"),  
+  function(dataset, indices)  {
+    getDataVec(dataset, indices, 'JSON')
+  })
 
 setMethod("getData", c("Dataset", "list", "character"),  
-function(dataset, indices, transfermode = 'JSON')  {
-  if (length(dataset@shape) != length(indices))
-    stop("wrong length of indexlist")
+function(dataset, indices, transfermode)  {
+  getDataList(dataset, indices, transfermode)  
+  })
+setMethod("getData", c("Dataset", "list", "missing"),  
+function(dataset, indices)  {
+  getDataList(dataset, indices, 'JSON')  
+  })
 
-  slicelist <- lapply(indices, slicify)
-  slclen <- lapply(slicelist, length)
+
+# private
+getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
+    indices <- checkSlices(dataset@shape, indices)
+    if (length(indices) == 0)
+      stop("bad slices")
+    if (!(transfermode %in% c('JSON', 'binary')))  {
+      warning('unrecognized transfermode, using JSON')
+      transfermode <- 'JSON'
+    }
+
+    sdims <- vapply(indices, slicelen, numeric(1))
+    indices <- vapply(indices, function(s) { s }, character(1))
+    sel <- paste0('[', paste(indices, collapse=','), ']')
+    endpoint <- dataset@file@src@endpoint
+    domain <- dataset@file@domain
+
+    request <- paste0(endpoint, '/datasets/', dataset@uuid, 
+      '/value?domain=', domain, '&select=', sel)
+    response <- submitRequest(request, transfermode=transfermode)
+
+    nn <- prod(sdims)
+    A <- array(rep(0, nn))
+    if (transfermode == 'JSON')  {
+      result <- response$value
+      # one-dimensional data is returned as a vector, 
+      # multi-dimensional data is returned as a list.
+
+      # unpack response into an R array 
+      if (is.list(result))  {
+        A[1:nn] <- vapply(1:nn, function(i) {
+          idx <- csub4idx(sdims, i)
+          result[[idx]]
+        }, numeric(1))
+      } else  {
+        A[1:nn] <- result
+      }
+    } else if (transfermode == 'binary')  {
+      result <- extractBinary(dataset@type, nn, response)
+      A[1:nn] <- vapply(1:nn, function(i) {
+        idx <- ridx4sub(sdims, csub4idx(sdims, i)) 
+        result[idx]
+      }, numeric(1))
+    }
+    AA <- array(A, dim = sdims)
+}
+
+# private
+getDataList <- function(dataset, indices, transfermode = 'JSON')  {
+    if (length(dataset@shape) != length(indices))
+      stop("wrong length of indexlist")
+
+    slicelist <- lapply(indices, slicify)
+    slclen <- lapply(slicelist, length)
 
   # TODO: assemble block arrays with abind - general case
-  if (any(slclen > 1))  {
-    stop("assembly of block arrays not implemented yet")
-  }
-  AA <- getData(dataset, unlist(slicelist), transfermode)
+    if (any(slclen > 1))  {
+      stop("assembly of block arrays not implemented yet")
+    }
+    AA <- getData(dataset, unlist(slicelist), transfermode)
 
-})
-
-setMethod("getData", c("Dataset", "character", "missing"), 
-  function(dataset, indices)  {
-    getData(dataset, indices, transfermode='JSON')
-  })
-
-setMethod("getData", c("Dataset", "list", "missing"), 
-  function(dataset, indices)  {
-    getData(dataset, indices, transfermode='JSON')
-  })
-
+}
 
 # private - in which we try to anticipate all the invalid things 
 # users will try to enter for indices
