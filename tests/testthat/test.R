@@ -1,0 +1,42 @@
+library(rhdf5client2)
+
+context("Sources")
+test_that("Both servers found", {
+  src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
+  doms <- domains(src.hsds, '/home/spollack')
+  expect_true('/home/spollack/testzero.h5' %in% doms) 
+  src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
+  doms <- domains(src.chan)
+  expect_true('neurons100k.h5s.channingremotedata.org' %in% doms) 
+})
+
+context("Files")
+test_that("Files can be opened for reading", {
+  src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
+  src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
+  f1 <- File(src.hsds, '/home/spollack/testzero.h5')
+  dsts <- listDatasets(f1)
+  expect_true('/grpB/grpBA/dsetX' %in% dsts)
+  f2 <- File(src.chan, 'tenx_100k_sorted.h5s.channingremotedata.org')
+  dsts <- listDatasets(f2)
+  expect_true(dsts == c('/assay001'))
+})
+
+context("Datasets")
+test_that("Data can be retrieved from Datasets", {
+  src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
+  src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
+  f1 <- File(src.hsds, '/home/spollack/testzero.h5')
+  f2 <- File(src.chan, 'tenx_100k_sorted.h5s.channingremotedata.org')
+  d1 <- Dataset(f1, '/grpC/dset1d')
+  d2 <- Dataset(f2, '/assay001')
+  R <- c(4046,2087,4654,3193)
+
+  A <- apply(getData(d2, c('1:4', '1:27998'), transfermode='JSON'), 1, sum)
+  expect_true(all(R == A))
+  A <- apply(getData(d2, c('1:4', '1:27998'), transfermode='binary'), 1, sum)
+  expect_true(all(R == A))
+  A <- apply(d2[1:4, 1:27998], 1, sum)
+  expect_true(all(R == A))
+  expect_true(sum(d1[1:20]) == 951)
+})

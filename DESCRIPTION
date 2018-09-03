@@ -7,5 +7,6 @@ Depends: R (>= 3.5.1), httr
 License: None
 Encoding: UTF-8
 LazyData: true
-Suggests: knitr, rmarkdown
+Suggests: knitr, rmarkdown,
+    testthat
 VignetteBuilder: knitr
