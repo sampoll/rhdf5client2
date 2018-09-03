@@ -1,5 +1,5 @@
 ---
-title: "Rhdf5client2 Vignette"
+title: "Rhdf5client2 Development Vignette"
 author: "Sam"
 date: "9/1/2018"
 output: rmarkdown::html_vignette
@@ -21,7 +21,7 @@ constructor requires the endpoint and server type, either `h5serv` or `hsds`.
 If the type is not specified, the server will be assumed to be `hsds`
 
 ```{r}
-test_ipaddr <- '34.202.237.217'    # today's address for test machine
+test_ipaddr <- '54.164.139.1'    # today's address for test machine
 test_endpoint <- paste0('http://', test_ipaddr, ':5000')
 src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
 src.test <- Source(test_endpoint, 'h5serv')
@@ -86,7 +86,9 @@ d1 <- Dataset(f1, '/assay001')
 d2 <- Dataset(f2, '/grpB/grpC/dataC')
 ```
 
-The fundamental data retrieval method is `getData`. It's argument is a
+### Data Fetch (1)
+
+The fundamental data retrieval method is `getData`. Its argument is a
 vector of slices of type `character`. Valid slices are `:` (all indices), 
 `1:10` (indices 1 through 10 inclusive), `:10` (same as `1:10`), `5:` 
 (from 5 to the maximum value of the index) and `2:14:4` (from 2 to 14 
@@ -103,6 +105,36 @@ apply(getData(d1, c('1:4', '1:27998'), transfermode='JSON'), 1, sum)
 apply(getData(d1, c('1:4', '1:27998'), transfermode='binary'), 1, sum)
 print(getData(d2, c('1:9:3', '1:11:2')))
 ```
+
+### Data Fetch (2)
+
+`getData` is generic. It can also be passed a list of vectors for the index 
+argument, one vector in each dimension. At present, it only works if 
+each of the vectors can be expressed as a single slice. Eventually, this 
+functionality will be expanded to the general multi-dimensional case of 
+multiple slices. In the general case, multiple array blocks will be 
+fetched and bound back together into a single array.
+
+```{r}
+apply(getData(d1, list(1:4, 1:27998), transfermode='JSON'), 1, sum)
+apply(getData(d1, list(1:4, 1:27998), transfermode='binary'), 1, sum)
+print(getData(d2, list(c(1,4,7), c(1, 3, 5, 7, 9, 11))))
+```
+
+### Data Fetch (3)
+
+The `[` operator is provided for the two most typical cases (one-dimensional and two-dimensional numeric data.)
+
+```{r}
+apply(d1[1:4, 1:27998], 1, sum)
+```
+
+
+
+
+
+
+
 
 
 

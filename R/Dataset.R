@@ -23,24 +23,49 @@ Dataset <- function(file, path)  {
 }
 
 
+#' data retrieval 
+#' @rdname extract-methods
+#' @param dataset an object of type Dataset
+#' @param indexlist a list of index vectors
+#' @param transfermode either 'JSON' or 'binarytransfer'
+#' @export
 
-#' getData basic data-fetching functionality
+# QUESTION: set default transfermode to 'binary'?
+#' special case: one-dimensional arrays
+setMethod('[', c("Dataset", "numeric"), 
+  function(x, i) {
+    getData(x, list(i), transfermode='JSON')
+  })
+
+#' special case: two-dimensional arrays
+setMethod('[', c("Dataset", "numeric", "numeric"), 
+  function(x, i, j) {
+    getData(x, list(i, j), transfermode='JSON')
+  })
+
+
+
+setGeneric("getData", function(dataset, indices, transfermode) standardGeneric("getData"))
+
+#' getData basic data-fetching functionality 
 #' @name getData
 #' @param dataset an object of type Dataset
 #' @param slices array of valid character slices in R format
 #' @export
-getData <- function(dataset, slices, transfermode = 'JSON')  {
-  slices <- checkSlices(dataset@shape, slices)
-  if (length(slices) == 0)
+
+setMethod("getData", c("Dataset", "character", "character"),  
+function(dataset, indices, transfermode = 'JSON')  {
+  indices <- checkSlices(dataset@shape, indices)
+  if (length(indices) == 0)
     stop("bad slices")
   if (!(transfermode %in% c('JSON', 'binary')))  {
     warning('unrecognized transfermode, using JSON')
     transfermode <- 'JSON'
   }
 
-  sdims <- vapply(slices, slicelen, numeric(1))
-  slices <- vapply(slices, function(s) { s }, character(1))
-  sel <- paste0('[', paste(slices, collapse=','), ']')
+  sdims <- vapply(indices, slicelen, numeric(1))
+  indices <- vapply(indices, function(s) { s }, character(1))
+  sel <- paste0('[', paste(indices, collapse=','), ']')
   endpoint <- dataset@file@src@endpoint
   domain <- dataset@file@domain
 
@@ -66,7 +91,43 @@ getData <- function(dataset, slices, transfermode = 'JSON')  {
   }
   AA <- array(A, dim = sdims)
 
-}
+})
+
+#' getData fetch data by array-indices 
+#' @name getData
+#' @param dataset an object of type Dataset
+#' @param indices list of vectors of indices. At present, each index
+#' array must translate to one slice. E.g., c(2, 4, 6, 8) is OK because
+#' it is one slice ('2:8:2'), but c(2, 4, 7, 9) is not OK because it
+#' is two slices ('2:4:2' and '7:9:2')x.
+#' @export
+
+setMethod("getData", c("Dataset", "list", "character"),  
+function(dataset, indices, transfermode = 'JSON')  {
+  if (length(dataset@shape) != length(indices))
+    stop("wrong length of indexlist")
+
+  slicelist <- lapply(indices, slicify)
+  slclen <- lapply(slicelist, length)
+
+  # TODO: assemble block arrays with abind - general case
+  if (any(slclen > 1))  {
+    stop("assembly of block arrays not implemented yet")
+  }
+  AA <- getData(dataset, unlist(slicelist), transfermode)
+
+})
+
+setMethod("getData", c("Dataset", "character", "missing"), 
+  function(dataset, indices)  {
+    getData(dataset, indices, transfermode='JSON')
+  })
+
+setMethod("getData", c("Dataset", "list", "missing"), 
+  function(dataset, indices)  {
+    getData(dataset, indices, transfermode='JSON')
+  })
+
 
 # private - in which we try to anticipate all the invalid things 
 # users will try to enter for indices
@@ -271,6 +332,62 @@ extractBinary <- function(typ, nele, rsp)  {
   endian <- ifelse(df[1,4] == 'LE', 'little', 'big')
   result <- readBin(rsp$content, what=what, n=nele, size=size, signed=signed, endian=endian)
   result
+
+}
+
+# slicify - convert an arbitrary vector into slices
+# This is an unsightly kludge, but it is designed to ensure
+# that there is no more than one slice of width one.
+# All other singletons should end up squashed into 
+# pairs with each other. The idea is that the time 
+# required to execute the loop is dwarfed by the time
+# required to execute an extra remote fetch.
+
+slicify <- function(v)  {
+  ll <- vector("list", length = length(v))   
+  vec <- rep(0, length(v))
+  
+  il <- 1
+  if (length(v) <= 2)  {
+    ll <- list(v)
+  } else {
+  
+    vec[1] <- v[1]
+    vec[2] <- v[2]
+    nv <- 2
+    i <- 3
+    while (i <= length(v))  {
+      if (v[i]-v[i-1] == v[i-1]-v[i-2])  {
+        nv <- nv + 1
+        vec[nv] <- v[i]
+        i = i + 1
+      } else  {
+        ll[[il]] <- vec[1:nv]
+        il <- il + 1
+        if (i < length(v))  {
+          vec[1] <- v[i]
+          vec[2] <- v[i+1]
+          nv <- 2
+          i = i + 2
+        } else {
+          vec[1] <- v[i]
+          nv <- 1
+          i = i + 1
+        }
+     }
+    }
+    if (nv > 0)  {
+      ll[[il]] <- vec[1:nv]
+    }
+    ll <- ll[-which(sapply(ll, is.null))]
+  }
+  
+  slices <- vapply(ll, function(vec) { 
+    start <- vec[1] 
+    stop <- vec[length(vec)] 
+    step <- ifelse(length(vec) == 1, 1, vec[2]-vec[1])
+    sprintf("%d:%d:%d", start, stop, step)
+  }, character(1))
 
 }
 
