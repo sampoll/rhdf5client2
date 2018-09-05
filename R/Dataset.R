@@ -344,8 +344,8 @@ extractBinary <- function(typ, nele, rsp)  {
 # pairs with each other. The idea is that the time 
 # required to execute the loop is dwarfed by the time
 # required to execute an extra remote fetch.
+slicelst <- function(v)  {
 
-slicify <- function(v)  {
   ll <- vector("list", length = length(v))   
   vec <- rep(0, length(v))
   
@@ -383,13 +383,17 @@ slicify <- function(v)  {
     }
     ll <- ll[-which(sapply(ll, is.null))]
   }
+  ll
+}
   
+# make list of vecs into string slices
+slicify <- function(v)  {
+  ll <- slicelst(v)
   slices <- vapply(ll, function(vec) { 
     start <- vec[1] 
     stop <- vec[length(vec)] 
     step <- ifelse(length(vec) == 1, 1, vec[2]-vec[1])
     sprintf("%d:%d:%d", start, stop, step)
   }, character(1))
-
 }
 

@@ -45,26 +45,46 @@ setMethod("extract_array", "RHDF5ArraySeed", function(x, index)  {
   # (ii) zero-length index - signifies zero elements in this dimension
   # which means a null fetch 
 
-  idxlist <- lapply(index, 
-    function(idx)  {
-      slc <- ':'
-      if (length(idx) == 0)  {
-        slc <- '(null)'
-      } else {
-        slc <- slicify(idx)
-        if (length(slc) != 1)
-          stop("multiple slice indices not implemented yet")
-        slc
+# idxlist <- lapply(seq_along(index), 
+#   function(i)  {
+#     v <- seq_along(x@dataset@shape[i])
+#     if (length(index[i]) == 0)  {
+#       v <- numeric(0)
+#     } else {
+#       l <- slicelst(index[i])
+#       if (length(l) != 1) {
+#         stop("multiple slice indices not implemented yet")
+#       }
+#       v <- l[[1]]
+#     }
+#     v
+#   }) 
+
+  idxlist <- vector(mode="list", length = length(x@dataset@shape))
+  for (i in seq_along(index))  {
+
+    if (is.null(index[[i]]))  {
+      v <- seq_along(rev(x@dataset@shape[i]))
+    } else if (length(index[[i]]) == 0)  {
+      v <- numeric(0)
+    } else  {
+      l <- slicelst(index[[i]])
+      if (length(l) != 1) {
+        stop("multiple slice indices not implemented yet")
       }
-      slc
-    }) 
-  nullfetch <- any(idxlist == '(null)')
+      v <- l[[1]]
+    }
+    idxlist[[i]] <- v
+  }
+  nullfetch <- any(is.null(idxlist))
+
+  print("idxlist = ")
+  print(idxlist)
 
   rdims <- vapply(index, length, numeric(1)) 
   if (nullfetch) { 
     A <- array(numeric(0), dim=rdims)
   } else  {
-    idxlist <- unlist(idxlist)
     A <- rhdf5client2::getData(x@dataset, idxlist)
   }
   t(A)
@@ -74,21 +94,23 @@ setMethod("extract_array", "RHDF5ArraySeed", function(x, index)  {
 #' @exportClass RHDF5Array
 setClass("RHDF5Array", contains="DelayedArray")
 
-#' @export
-# setClass("RHDF5Matrix", contains=c("DelayedArray", "RHDF5Array"))
+#' @exportClass RHDF5Matrix
+setClass("RHDF5Matrix", contains=c("DelayedMatrix", "RHDF5Array"))
+
+setMethod("matrixClass", "RHDF5Array", function(x) "RHDF5Matrix")
 
 #' @export
-# setMethod("matrixClass", "RHDF5Array", function(x) "RHDF5Matrix")
+setAs("RHDF5Array", "RHDF5Matrix", function(from)  {
+  new("RHDF5Matrix", from)
+})
 
 #' @export
-# setAs("RHDF5Array", "RHDF5Matrix", function(from)  {
-#   new("RHDF5Matrix", from)
-# })
+setAs("RHDF5Matrix", "RHDF5Array", function(from) from)   # no-op
 
-#' @export
 setMethod("DelayedArray", "RHDF5ArraySeed", 
   function(seed)  { new_DelayedArray(seed, Class="RHDF5Array") }
 )
+
 
 #' @export
 RHDF5Array <- function(endpoint, svrtype, domain, dsetname)  {
