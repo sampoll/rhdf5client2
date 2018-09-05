@@ -123,11 +123,14 @@ getDataList <- function(dataset, indices, transfermode = 'JSON')  {
     slicelist <- lapply(indices, slicify)
     slclen <- lapply(slicelist, length)
 
-  # TODO: assemble block arrays with abind - general case
     if (any(slclen > 1))  {
-      stop("assembly of block arrays not implemented yet")
+      # assemble block arrays with abind - general case
+      AA <- multifetch(slicelist, dataset)
+    } else  {
+      # simple case: one block
+      AA <- getData(dataset, unlist(slicelist), transfermode)
     }
-    AA <- getData(dataset, unlist(slicelist), transfermode)
+    AA
 
 }
 
@@ -396,4 +399,65 @@ slicify <- function(v)  {
     sprintf("%d:%d:%d", start, stop, step)
   }, character(1))
 }
+
+# private - fetch and assemble dataset blocks 
+
+multifetch <- function(LL, dataset)  { 
+  slicelen <- function(slc)  {
+    ss <- as.numeric(strsplit(slc, ':')[[1]])
+    r <- (ss[2]-ss[1]) %/% ss[3]
+    r+1
+  }
+
+  # MM[[d]][[i]] is the length of the ith slice in dimension d
+  MM <- lapply(LL, function(L) lapply(L, function(slc) slicelen(slc)))
+
+  # N[d] is the length of the result array in dimension d 
+  N <- unlist(lapply(seq_along(MM), function(m) sum(unlist(MM[[m]]))))
+
+  # B[d] is the number of slices in dimension d
+  B <- unlist(lapply(seq_along(MM), function(m) length(unlist(MM[[m]]))))
+
+  # pre-allocate result array
+  R <- array(rep(0,prod(N)), dim=N) 
+
+  # the total number of fetches is the product of the numbers of slices
+  nf <- prod(B)
+
+  # loop over fetches (this can be vapply later)
+  for (i in 1:nf)  {
+
+    # select ith block to fetch
+    sbs <- rsub4idx(B, i)
+    scs <- lapply(seq_along(sbs), function(j) LL[[j]][[sbs[j]]])
+  
+    # fetch block
+    blk <- getData(dataset, unlist(scs))   # is scs right?
+
+    # put into correct subarray of R 
+    nd <- length(LL)
+    arglst <- vector(mode="list", length = nd)
+    for(d in 1:nd)  {
+      umm <- unlist(MM[[d]])
+      startpos <- ifelse(sbs[d] != 1,1+sum(umm[1:(sbs[d]-1)]),1)
+      length <- MM[[d]][[sbs[d]]]
+      arglst[[d]] <- seq(startpos, startpos+length-1)
+    }  
+    R <- do.call('[<-', c(list(R), arglst, list(blk)))
+  }
+  R
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
