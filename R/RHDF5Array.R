@@ -30,8 +30,8 @@ setMethod("dimnames", "RHDF5ArraySeed", function(x)  {
 
 #' @export
 setMethod("dim", "RHDF5ArraySeed", function(x)  {
-  dims <- as.integer(x@dataset@shape)
-  rev(dims)
+  dm <- as.integer(rev(x@dataset@shape))
+  dm
 })
 
 #' @export
@@ -64,30 +64,29 @@ setMethod("extract_array", "RHDF5ArraySeed", function(x, index)  {
   for (i in seq_along(index))  {
 
     if (is.null(index[[i]]))  {
-      v <- seq_along(rev(x@dataset@shape[i]))
+      n <- x@dataset@shape[i]
+      if (n == 0)  {
+        v <- numeric(0)
+      } else  {
+        v <- seq(1,n)
+      }
     } else if (length(index[[i]]) == 0)  {
       v <- numeric(0)
     } else  {
-      l <- slicelst(index[[i]])
-      if (length(l) != 1) {
-        stop("multiple slice indices not implemented yet")
-      }
-      v <- l[[1]]
+      v <- unlist(slicelst(index[[i]]))
     }
     idxlist[[i]] <- v
   }
-  nullfetch <- any(is.null(idxlist))
 
-  print("idxlist = ")
-  print(idxlist)
-
-  rdims <- vapply(index, length, numeric(1)) 
+  rdims <- lapply(idxlist, function(v) length(v))
+  nullfetch <- any(rdims == 0)
   if (nullfetch) { 
     A <- array(numeric(0), dim=rdims)
   } else  {
-    A <- rhdf5client2::getData(x@dataset, idxlist)
+    A <- rhdf5client2:::getDataList(x@dataset, idxlist)
   }
-  t(A)
+
+  R<- t(A)   # untranspose the transpose
 
 })
 

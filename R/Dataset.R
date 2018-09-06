@@ -71,6 +71,7 @@ function(dataset, indices)  {
 
 # private
 getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
+
     indices <- checkSlices(dataset@shape, indices)
     if (length(indices) == 0)
       stop("bad slices")
@@ -123,7 +124,7 @@ getDataList <- function(dataset, indices, transfermode = 'JSON')  {
     slicelist <- lapply(indices, slicify)
     slclen <- lapply(slicelist, length)
 
-    if (any(slclen > 1))  {
+    if (any(unlist(slclen) > 1))  {
       # assemble block arrays with abind - general case
       AA <- multifetch(slicelist, dataset)
     } else  {
@@ -213,16 +214,33 @@ checkSlices <- function(shape, slices)  {
   if (!ok)
     return(list())
 
-  pyslices <- lapply(slicelist, function(slc)  {
-    # python indices from 0 instead of 1
-    slc[1] <- slc[1]-1
-    slc[2] <- slc[2]-1
-    # if (stop-start) % step == 0, python slice excludes stop
-    if ( (slc[2]-slc[1]) %% slc[3] == 0 )
-      slc[2] <- slc[2] + 1
-    sprintf('%d:%d:%d', slc[1], slc[2], slc[3])
-  })
+  strslices <- lapply(slicelist, 
+    function(slc) { sprintf('%d:%d:%d', slc[1], slc[2], slc[3]) })
+  pyslices <- lapply(strslices, r2pyslice) 
 
+}
+
+# private - convert R-slice (string) to python-slice (string)
+r2pyslice <- function(slcstr)  {
+  slc <- as.numeric(strsplit(slcstr, ':')[[1]])
+  # python indices from 0 instead of 1
+  slc[1] <- slc[1]-1
+  slc[2] <- slc[2]-1
+  # if (stop-start) % step == 0, python slice excludes stop
+  if ( (slc[2]-slc[1]) %% slc[3] == 0 )
+    slc[2] <- slc[2] + 1
+  slcstr <- sprintf('%d:%d:%d', slc[1], slc[2], slc[3])
+}
+
+# private - convert R-slice (vec) to python-slice (vec)
+r2pyslcvec <- function(slc)  {
+  # python indices from 0 instead of 1
+  slc[1] <- slc[1]-1
+  slc[2] <- slc[2]-1
+  # if (stop-start) % step == 0, python slice excludes stop
+  if ( (slc[2]-slc[1]) %% slc[3] == 0 )
+    slc[2] <- slc[2] + 1
+  slc
 }
 
 # Note: for more than two dimensions, "column-major" means
