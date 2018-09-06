@@ -21,7 +21,7 @@ constructor requires the endpoint and server type, either `h5serv` or `hsds`.
 If the type is not specified, the server will be assumed to be `hsds`
 
 ```{r}
-test_ipaddr <- '54.164.139.1'    # today's address for test machine
+test_ipaddr <- '34.229.144.199' 
 test_endpoint <- paste0('http://', test_ipaddr, ':5000')
 src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
 src.test <- Source(test_endpoint, 'h5serv')

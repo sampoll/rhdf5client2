@@ -40,3 +40,18 @@ test_that("Data can be retrieved from Datasets", {
   expect_true(all(R == A))
   expect_true(sum(d1[1:20]) == 951)
 })
+
+context("DelayedArray subclass RHDF5Array")
+test_that("DelayedArray can be instantiated and accessed",  {
+  R <- c(4046,2087,4654,3193)
+  da <- RHDF5Array('http://h5s.channingremotedata.org:5000', 'h5serv', 
+        'tenx_full.h5s.channingremotedata.org', '/newassay001')
+  A <- apply(da[,1:4],2,sum)
+  expect_true(all(R == A))
+  da <- RHDF5Array('http://hsdshdflab.hdfgroup.org', 'hsds', 
+        '/shared/bioconductor/tenx_full.h5', '/newassay001')
+  A <- apply(da[,1:4],2,sum)
+  expect_true(all(R == A))
+})
+
+
