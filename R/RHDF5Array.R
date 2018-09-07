@@ -44,38 +44,22 @@ setMethod("extract_array", "RHDF5ArraySeed", function(x, index)  {
   # (ii) zero-length index - signifies zero elements in this dimension
   # which means a null fetch 
 
-# idxlist <- lapply(seq_along(index), 
-#   function(i)  {
-#     v <- seq_along(x@dataset@shape[i])
-#     if (length(index[i]) == 0)  {
-#       v <- numeric(0)
-#     } else {
-#       l <- slicelst(index[i])
-#       if (length(l) != 1) {
-#         stop("multiple slice indices not implemented yet")
-#       }
-#       v <- l[[1]]
-#     }
-#     v
-#   }) 
-
-  idxlist <- vector(mode="list", length = length(x@dataset@shape))
-  for (i in seq_along(index))  {
-
-    if (is.null(index[[i]]))  {
-      n <- x@dataset@shape[i]
-      if (n == 0)  {
+  idxlist <- lapply(seq_along(index), 
+    function(i)  {
+      if (is.null(index[[i]]))  {
+        n <- x@dataset@shape[i]
+        if (n == 0)  {
+          v <- numeric(0)
+        } else  {
+          v <- seq(1,n)
+        }
+      } else if (length(index[[i]]) == 0)  {
         v <- numeric(0)
       } else  {
-        v <- seq(1,n)
+        v <- unlist(slicelst(index[[i]]))
       }
-    } else if (length(index[[i]]) == 0)  {
-      v <- numeric(0)
-    } else  {
-      v <- unlist(slicelst(index[[i]]))
-    }
-    idxlist[[i]] <- v
-  }
+      v
+    }) 
 
   rdims <- lapply(idxlist, function(v) length(v))
   nullfetch <- any(rdims == 0)
