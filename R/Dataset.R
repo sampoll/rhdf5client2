@@ -81,6 +81,16 @@ getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
     }
 
     sdims <- vapply(indices, slicelen, numeric(1))
+
+    # h5pyd drops single-width dimensions at the end. 
+
+    # dimensions of the result
+    rdims <- sdims[which(sdims != 1)]
+
+    # dimensions of response$value
+    while(sdims[length(sdims)] == 1)
+      sdims <- sdims[1:(length(sdims)-1)]
+
     indices <- vapply(indices, function(s) { s }, character(1))
     sel <- paste0('[', paste(indices, collapse=','), ']')
     endpoint <- dataset@file@src@endpoint
@@ -90,20 +100,21 @@ getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
       '/value?domain=', domain, '&select=', sel)
     response <- submitRequest(request, transfermode=transfermode)
 
-    nn <- prod(sdims)
+    # browser()
+
+    nn <- prod(rdims)
     A <- array(rep(0, nn))
     if (transfermode == 'JSON')  {
-      result <- response$value
-      # one-dimensional data is returned as a vector, 
-      # multi-dimensional data is returned as a list.
-
       # unpack response into an R array 
+      result <- response$value
+
+      # multi-dimensional data is returned as a list.
       if (is.list(result))  {
         A[1:nn] <- vapply(1:nn, function(i) {
           idx <- csub4idx(sdims, i)
           result[[idx]]
         }, numeric(1))
-      } else  {
+      } else  {  # one-dimensional data is returned as a vector, 
         A[1:nn] <- result
       }
     } else if (transfermode == 'binary')  {
@@ -113,7 +124,19 @@ getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
         result[idx]
       }, numeric(1))
     }
-    AA <- array(A, dim = sdims)
+
+    # Question: should AA be forced to rdims or sdims?
+    # For a slice of a multi-dimensional array, we want
+    # to force to the subset. (rdims)
+
+    # But if DelayedArray requires a 1 x N array, we
+    # want the returned value to be 1 x N, not a 
+    # vector of N. (sdims)
+
+    # Arbitrary choice: force flat (rdims) and let 
+    # the calling routine redimension.
+
+    AA <- array(A, dim = rdims)
 }
 
 # private

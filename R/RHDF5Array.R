@@ -37,9 +37,8 @@ setMethod("dim", "RHDF5ArraySeed", function(x)  {
 #' @export
 setMethod("extract_array", "RHDF5ArraySeed", function(x, index)  {
 
-  # requireNamespace(rhdf5client2)
   index <- rev(index)
-  
+
   # two special cases
   # (i) NULL index - signifies all elements in this dimension
   # (ii) zero-length index - signifies zero elements in this dimension
@@ -84,9 +83,12 @@ setMethod("extract_array", "RHDF5ArraySeed", function(x, index)  {
     A <- array(numeric(0), dim=rdims)
   } else  {
     A <- rhdf5client2:::getDataList(x@dataset, idxlist)
+    # unflatten vector if necessary: see note at 
+    # end of Dataset::getDataVec on flattened result
+    # for fetch of single-width dimensioned arrays.
+    A <- array(A, dim=rdims)
   }
-
-  R<- t(A)   # untranspose the transpose
+  R <- t(A)   # untranspose the transpose
 
 })
 
