@@ -21,8 +21,8 @@ library(reticulate)
 ### Get result with `rhdf5client2`
 
 ```{r}
-src <- Source('http://hsdshdflab.hdfgroup.org')
-rd <- Dataset(File(src, '/home/spollack/testzero.h5'), '/grpC/dset4d')
+src <- Source('http://34.229.144.199:5000', 'h5serv')
+rd <- Dataset(File(src, 'filetwo.subdirb.data.hdfgroup.org'), '/group0/group1/group2/data4d')
 A <- getData(rd, list(3:4, 8:9, 5:6, 2:3))
 sum(A)
 ```
@@ -33,10 +33,10 @@ sum(A)
 h5pyd <- import("h5pyd")
 builtins <- import_builtins()
 
-endpoint <- 'http://hsdshdflab.hdfgroup.org'
-domain <- '/home/spollack/testzero.h5'
+endpoint <- 'http://34.229.144.199:5000'
+domain <- 'filetwo.subdirb.data.hdfgroup.org'
 f <- h5pyd$File(endpoint=endpoint, mode='r', domain=domain)
-pd <- f$`__getitem__`('/grpC/dset4d')
+pd <- f$`__getitem__`('/group0/group1/group2/data4d')
 scs <- tuple(builtins$slice(2L, 4L, 1L), builtins$slice(7L, 9L, 1L), 
              builtins$slice(4L, 6L, 1L), builtins$slice(1L, 3L, 1L))
 A <- pd$`__getitem__`(scs)
@@ -49,7 +49,7 @@ The dimensionality of the http response from the server is somewhat non-intuitiv
 so we need to test a case in which the single-width slices are dispersed:
 
 ```{r}
-BR = getData(rd, list(c(4), 1:11, c(5), 1:3))
+BR <- getData(rd, list(c(4), 1:11, c(5), 1:3))
 scs <- tuple(builtins$slice(3L, 4L, 1L), builtins$slice(0L, 12L, 1L),
              builtins$slice(4L, 5L, 1L), builtins$slice(0L, 3L, 1L))
 BP <- pd$`__getitem__`(scs)
@@ -59,7 +59,7 @@ all(BP == BR)
 
 
 ```{r}
-BR = getData(rd, list(c(5), 1:11, 1:7, c(2)))
+BR <- getData(rd, list(c(5), 1:11, 1:7, c(2)))
 scs <- tuple(builtins$slice(4L, 5L, 1L), builtins$slice(0L, 12L, 1L),
              builtins$slice(0L, 7L, 1L), builtins$slice(1L, 2L, 1L))
 BP <- pd$`__getitem__`(scs)
@@ -67,6 +67,44 @@ print(BR)
 all(BP == BR)
 ```
 
+## Multiple-slice fetches
+
+### Check: multiple slices in two dimensions is OK
+
+With a two-dimensional array, non-adjacent slices work:
+
+```{r}
+f <- File(src, 'fileone.subdira.data.hdfgroup.org')
+d <- Dataset(f, '/grpB/grpC/dataC')
+print(getData(d, list(1:9, 1:11)))
+print(getData(d, list(c(2, 3, 5, 7), c(1, 2, 4, 6, 8, 10))))
+```
+
+### Check: single slices in multiple dimensions is OK
+
+```{r}
+d <- Dataset(File(src, 'filetwo.subdirb.data.hdfgroup.org'), '/group0/group1/dataR')
+X <- getData(d, list(c(5), 3:6, c(2), 2:4))
+print(X)
+```
+
+
+### Check: multiple slices in multiple dimensions OK
+
+```{r}
+d <- Dataset(File(src, 'filetwo.subdirb.data.hdfgroup.org'), '/group0/group1/dataR')
+BR <- getData(d, list(c(4), 2:6, c(5), 1:3))
+print(BR)
+BT <- getData(d, list(c(4), c(2, 3, 5, 6), c(5), 1:3))
+print(BT)
+BR <- getData(d, list(c(4), 2:6, c(5), 1:5))
+print(BR)
+BT <- getData(d, list(c(4), c(2, 3, 5, 6), c(5), c(1, 2, 4, 5)))
+print(BT)
+```
+
+
+TODO: fetching a single data point does not work, e.g.`getData(d, list(1:1, 4:4, 2:3, 3:3))` is OK, but `getData(d, list(1:1, 4:4, 2:2, 3:3))` times out.
 
 
 

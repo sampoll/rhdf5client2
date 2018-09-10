@@ -148,7 +148,7 @@ getDataList <- function(dataset, indices, transfermode = 'JSON')  {
     slclen <- lapply(slicelist, length)
 
     if (any(unlist(slclen) > 1))  {
-      # assemble block arrays with abind - general case
+      # assemble block arrays 
       AA <- multifetch(slicelist, dataset)
     } else  {
       # simple case: one block
@@ -480,25 +480,26 @@ multifetch <- function(LL, dataset)  {
     arglst <- vector(mode="list", length = nd)
     for(d in 1:nd)  {
       umm <- unlist(MM[[d]])
-      startpos <- ifelse(sbs[d] != 1,1+sum(umm[1:(sbs[d]-1)]),1)
+      startpos <- 1
+      if (sbs[d] != 1)  {
+        startpos <- 1+sum(umm[1:(sbs[d]-1)])
+      }
       length <- MM[[d]][[sbs[d]]]
       arglst[[d]] <- seq(startpos, startpos+length-1)
     }  
     R <- do.call('[<-', c(list(R), arglst, list(blk)))
   }
+  
+  # squash flat dimensions out
+
+  # note: This is kind of a kludge, it would be better to
+  # figure out the final dimensions ahead of time and 
+  # modify the for loop with conditionals. But if this 
+  # works, it evades unnecessary code complexity.
+
+  NN <- N[which(N != 1)]
+  R <- array(R, dim=NN)
+
   R
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 

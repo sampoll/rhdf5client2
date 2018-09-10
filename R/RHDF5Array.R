@@ -1,5 +1,3 @@
-# TODO: roxygen
-
 #' RHDF5ArraySeed for RHDF5Array backend to DelayedArray
 #' @import DelayedArray
 setClass("RHDF5ArraySeed", contains=c("Array"), 
@@ -13,7 +11,6 @@ setClass("RHDF5ArraySeed", contains=c("Array"),
 #' seed constructor 
 #' @export
 RHDF5ArraySeed <- function(endpoint, svrtype, domain, dsetname)  {
-# requireNamespace(rhdf5client2)
   src <- rhdf5client2::Source(endpoint, svrtype)
   fle <- rhdf5client2::File(src, domain)
   dset <- rhdf5client2::Dataset(fle, dsetname)
