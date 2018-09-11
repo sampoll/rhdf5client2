@@ -26,9 +26,9 @@ context("Datasets")
 test_that("Data can be retrieved from Datasets", {
   src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
   src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
-  f1 <- File(src.hsds, '/home/spollack/testzero.h5')
+  f1 <- File(src.hsds, '/home/spollack/testone.h5')
   f2 <- File(src.chan, 'tenx_100k_sorted.h5s.channingremotedata.org')
-  d1 <- Dataset(f1, '/grpC/dset1d')
+  d1 <- Dataset(f1, '/group0/dset1d')
   d2 <- Dataset(f2, '/assay001')
   R <- c(4046,2087,4654,3193)
 
@@ -38,7 +38,7 @@ test_that("Data can be retrieved from Datasets", {
   expect_true(all(R == A))
   A <- apply(d2[1:4, 1:27998], 1, sum)
   expect_true(all(R == A))
-  expect_true(sum(d1[1:20]) == 951)
+  expect_true(sum(d1[1:20]) == 937)
 })
 
 context("DelayedArray subclass RHDF5Array")
