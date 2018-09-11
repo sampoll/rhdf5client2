@@ -33,8 +33,8 @@ sum(A)
 h5pyd <- import("h5pyd")
 builtins <- import_builtins()
 
-endpoint <- 'http://34.229.144.199:5000'
-domain <- 'filetwo.subdirb.data.hdfgroup.org'
+endpoint <- 'http://hsdshdflab.hdfgroup.org'
+domain <- '/home/spollack/testone.h5'
 f <- h5pyd$File(endpoint=endpoint, mode='r', domain=domain)
 pd <- f$`__getitem__`('/group0/group1/group2/data4d')
 scs <- tuple(builtins$slice(2L, 4L, 1L), builtins$slice(7L, 9L, 1L), 
@@ -103,8 +103,13 @@ BT <- getData(d, list(c(4), c(2, 3, 5, 6), c(5), c(1, 2, 4, 5)))
 print(BT)
 ```
 
+### Special case: single-datum fetch
 
-TODO: fetching a single data point does not work, e.g.`getData(d, list(1:1, 4:4, 2:3, 3:3))` is OK, but `getData(d, list(1:1, 4:4, 2:2, 3:3))` times out.
+```{r}
+x <- getData(d, list(c(4), c(5), c(3), c(2)))
+print(x)
+```
+
 
 
 

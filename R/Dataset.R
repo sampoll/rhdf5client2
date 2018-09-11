@@ -82,14 +82,19 @@ getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
 
     sdims <- vapply(indices, slicelen, numeric(1))
 
-    # h5pyd drops single-width dimensions at the end. 
-
-    # dimensions of the result
-    rdims <- sdims[which(sdims != 1)]
-
-    # dimensions of response$value
-    while(sdims[length(sdims)] == 1)
-      sdims <- sdims[1:(length(sdims)-1)]
+    # rdims is dimensions of response$value
+    singlefetch <- FALSE
+    if (all(sdims == 1))  {
+      # this is a single-value fetch
+      rdims <- c(1)
+      singlefetch <- TRUE
+    } else  {
+      # h5pyd drops single-width dimensions at the end. 
+      # dimensions of the result
+      rdims <- sdims[which(sdims != 1)]
+      while(sdims[length(sdims)] == 1)
+        sdims <- sdims[1:(length(sdims)-1)]
+    }
 
     indices <- vapply(indices, function(s) { s }, character(1))
     sel <- paste0('[', paste(indices, collapse=','), ']')
@@ -99,6 +104,11 @@ getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
     request <- paste0(endpoint, '/datasets/', dataset@uuid, 
       '/value?domain=', domain, '&select=', sel)
     response <- submitRequest(request, transfermode=transfermode)
+
+    # !!! test this !!!
+    if (singlefetch)  {
+      return(as.numeric(response$value))
+    }
 
     # browser()
 
