@@ -1,10 +1,10 @@
 ---
 title: "Rhdf5client2 Development Vignette"
-author: "Sam"
+author: "Sam Pollack"
 date: "9/1/2018"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteIndexEntry{Development details on rhdf5client2}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
@@ -14,10 +14,11 @@ knitr::opts_chunk$set(echo = TRUE)
 library(rhdf5client2)
 ```
 
-## Source
+# Source
 
 An object of type Source is a HDFGroup server running on a machine. The 
-constructor requires the endpoint and server type, either `h5serv` or `hsds`. 
+constructor requires the endpoint and server type, either `h5serv` (for
+the Tornado-based HDF Server) or `hsds` (for the HDF Scalable Data Service).
 If the type is not specified, the server will be assumed to be `hsds`
 
 ```{r}
@@ -48,7 +49,7 @@ domains(src.hsds, '/home/jreadey')
 domains(src.hsds, '/home/jreadey/HDFLabTutorial')
 ```
 
-## File
+# File
 
 An object of class File represents a HDF5 file. The object is constructed 
 by providing a source and a file domain. (TODO: if the domain is not a 
@@ -66,7 +67,7 @@ listDatasets(f0)
 listDatasets(f1)
 ```
 
-## Dataset
+# Dataset
 
 Construct a Dataset object from a File and a dataset path.
 
@@ -75,7 +76,7 @@ d0 <- Dataset(f0, '/grpA/grpAB/dsetX')
 d1 <- Dataset(f1, '/assay001')
 ```
 
-### Data Fetch (1)
+## Data Fetch (1)
 
 The fundamental data retrieval method is `getData`. Its argument is a
 vector of slices of type `character`. Valid slices are `:` (all indices), 
@@ -83,8 +84,8 @@ vector of slices of type `character`. Valid slices are `:` (all indices),
 (from 5 to the maximum value of the index) and `2:14:4` (from 2 to 14 
 inclusive in increments of 4.)
 
-Note that the slice should be passed in R semantics. I.e., 1 signifies
-the first index and the last element is included in the slice. (Internally,
+Note that the slice should be passed in R semantics: 1 signifies
+the first element, and the last element is included in the slice. (Internally,
 rhdf5client2 converts to Python semantics, in which the first index is 0 
 and the last element is excluded. But here, as everywhere in the package,
 all Python details should be hidden from the user.)
@@ -94,7 +95,7 @@ apply(getData(d1, c('1:4', '1:27998'), transfermode='JSON'), 1, sum)
 apply(getData(d1, c('1:4', '1:27998'), transfermode='binary'), 1, sum)
 ```
 
-### Data Fetch (2)
+## Data Fetch (2)
 
 `getData` is generic. It can also be passed a list of vectors for the index 
 argument, one vector in each dimension. At present, it only works if 
@@ -108,7 +109,7 @@ apply(getData(d1, list(1:4, 1:27998), transfermode='JSON'), 1, sum)
 apply(getData(d1, list(1:4, 1:27998), transfermode='binary'), 1, sum)
 ```
 
-### Data Fetch (3)
+## Data Fetch (3)
 
 The `[` operator is provided for the two most typical cases (one-dimensional and two-dimensional numeric data.)
 
