@@ -1,6 +1,6 @@
 Package: rhdf5client2
 Title: Reorganization of rhdf5client code
-Version: 0.0.0.9001
+Version: 0.0.0.9002
 Authors@R: person("Sam", "Pollack", email = "spollack@jimmy.harvard.edu", role = c("aut", "cre"))
 Description: This package provides access to HDF5 files maintained on two types of remote server provided by the HDFGroup; the obsolescent prototype h5serv server and its successor, the more robust hsds server.
 Depends: R (>= 3.5.1), httr, DelayedArray, methods, BiocGenerics, rjson 
