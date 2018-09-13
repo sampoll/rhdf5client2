@@ -1,18 +1,19 @@
-# All files are domains, but not all domains are files 
-# The only non-file domains we care about are "root domains" 
-
-# Given an endpoint and a root domain, what files are on
-# the system? 
-
+#' An S4 class to represent a HDF5 server listening on a port.
+#'
+#' @slot endpoint URL for server 
+#' @slot type Type of server software at the source; must be 
+#' either 'h5serv' or (default) 'hsds' 
 setClass("Source", representation(endpoint="character", type="character"))
 
-#' constructor for a Source
+#' Construct an object of type Source.
+#'
+#' A Source is a representation of a URL which provides access to a HDF5 
+#' server (either h5serv or hsds.) 
+#'
 #' @name Source
-#' @param endpoint URL and port for server 
-#' @param type Either 'h5serv' or 'hsds'
+#' @return An object of type Source
 #' @examples
 #' src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
-#' src.test <- Source('http://54.87.224.110:5000', 'h5serv')
 #' src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
 #' @export
 Source <- function(endpoint, type='hsds')  {
@@ -22,28 +23,41 @@ Source <- function(endpoint, type='hsds')  {
   # member root id also?
 }
 
-#' domains find files and subdirectories of a domain
+#' List files and subdirectories of a domain
 #'
 #' The user needs to give the domain to start in. The search
 #' will be non-recursive. I.e., output for domain '/home/jreadey/' will 
 #' not return the files in '/home/jreadey/HDFLabTutorial/'
+#'
+#' @param object An object of type Source 
+#'
+#' @param rootdir A slash-separated directory in the Source file system. 
+#'
+#' @return a vector of domains in the rootdir
+#'
+#' @export
+#' @docType methods
+#' @rdname domains-methods
+#'
+#' @examples
+#' domains(src.chan)
+#' domains(src.hsds, '/home/jreadey')
 setGeneric('domains', function(object, rootdir) standardGeneric('domains'))
 
-#' @name domains
-#' @param object An object of type Source 
-#' @param rootdir A slash-separated directory in the Source file system. 
-#' @export
+#' @rdname domains-methods
+#' @aliases domains,Source,character-method
 setMethod('domains', c("Source", "character"), 
   function(object, rootdir)  {
     ll <- domainContents(object, rootdir)
     vapply(ll, function(l) l$filename, character(1))
   })
 
+#' @rdname domains-methods
+#' @aliases domains,Source,missing-method
 setMethod('domains', c("Source", "missing"),  
   function(object) { 
     domains(object, '/hdfgroup/org') 
   })
-
 
 # private
 domainContents <- function(object, rootdir = '/hdfgroup/org')  {
@@ -119,8 +133,6 @@ domainContents <- function(object, rootdir = '/hdfgroup/org')  {
       }
     }
 
-# Why was I checking length(link) =?= 0 here?
-#
     if (length(link) == 0 || 
         link[['class']] == 'H5L_TYPE_HARD')  {  # domain is a directory
       request <- paste0(object@endpoint, "/groups/", nextid, "/links")
