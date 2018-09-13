@@ -1,10 +1,25 @@
+#' An S4 class to represent a dataset in a HDF5 file.
+#'
+#' @slot file An object of type File; the file in which the dataset is resident.
+#' @slot path The dataset's path in the internal HDF5 hiearchy.
+#' @slot uuid The unique unit ID by which the dataset is accessed in the server 
+#' database system.
+#' @slot shape The dimensions of the dataset
+#' @slot type The dataset's HDF5 datatype
 setClass("Dataset", representation(file="File", path="character", uuid="character",
   shape="numeric", type="list"))
 
-#' constructor for a Dataset 
+#' Construct an object of type Dataset 
+#' 
+#' A Dataset is a representation of a dataset in a HDF5 file.
+#' 
 #' @name Dataset
-#' @param file an object of type File
-#' @param path intra-file path string
+#' @param file An object of type File which hosts the dataset 
+#' @param path The complete intrafile path to the dataset
+#' @examples
+#' src <- Source('http://hsdshdflab.hdfgroup.org')
+#' f <- File(src, '/home/spollack/testzero.h5')
+#' d <- Dataset(f, '/grpA/grpAB/dsetX')
 #' @export
 Dataset <- function(file, path)  {
 
@@ -22,54 +37,85 @@ Dataset <- function(file, path)  {
     shape=shape, type=type)
 }
 
-
-#' data retrieval 
+#' extract elements of a one or two-dimensional Dataset
+#'
+#' @name [
+#' @aliases [,Dataset-method
+#' @docType methods
 #' @rdname extract-methods
-#' @param dataset an object of type Dataset
-#' @param indexlist a list of index vectors
-#' @param transfermode either 'JSON' or 'binarytransfer'
-#' @export
-
-# QUESTION: set default transfermode to 'binary'?
-#' special case: one-dimensional arrays
+#'
+# special case: one-dimensional arrays
 setMethod('[', c("Dataset", "numeric"), 
   function(x, i) {
     getDataList(x, list(i), transfermode='JSON')
   })
 
-#' special case: two-dimensional arrays
+# special case: two-dimensional arrays
 setMethod('[', c("Dataset", "numeric", "numeric"), 
   function(x, i, j) {
     getDataList(x, list(i, j), transfermode='JSON')
   })
 
-
-#' getData basic data-fetching functionality 
-#' @name getData
-#' @param dataset an object of type Dataset
-#' @param indices array of valid character slices in R format or list of vectors
-#' @export
+#' Fetch data from a remote dataset
+#'
+#' The servers require data to be fetched in slices, i.e., in sets of 
+#' for which the indices of each dimension are of the form start:stop:step.
+#' More complex sets of indices will be split into slices and fetched in
+#' multiple requests. This is opaque to the user, but may enter into 
+#' considerations of data access patterns, e.g., for performance-tuning.
+#'
+#' @param dataset An object of type Dataset, the dataset to access.
+#'
+#' @param indices The indices of the data to fetch
+#'
+#' @param transfermode Either (default) 'JSON' or 'binary'
+#'
+#' @return an Array containing the data fetched from the server
+#'
+#' @export 
+#' @docType methods
+#' @rdname getData-methods
+#'
+#' @examples
+#' s <- Source('http://hsdshdflab.hdfgroup.org')
+#' f <- File(s, '/shared/bioconductor/tenx_full.h5')
+#' d <- Dataset(f, '/newassay001')
+#' x <- getData(d, c('1:4', '1:27998'), transfermode='JSON')
+#' x <- getData(d, c(1:4, 1:27998), transfermode='JSON')
+#' x <- d[1:4,1:27998]
 setGeneric("getData", function(dataset, indices, transfermode) standardGeneric("getData"))
+
+#' @rdname getData-methods
+#' @aliases getData,Dataset,character,character-method
 setMethod("getData", c("Dataset", "character", "character"),  
   function(dataset, indices, transfermode)  {
     getDataVec(dataset, indices, transfermode)
   })
+
+#' @rdname getData-methods
+#' @aliases getData,Dataset,character,missing-method
 setMethod("getData", c("Dataset", "character", "missing"),  
   function(dataset, indices)  {
     getDataVec(dataset, indices, 'JSON')
   })
 
+#' @rdname getData-methods
+#' @aliases getData,Dataset,list,character-method
 setMethod("getData", c("Dataset", "list", "character"),  
 function(dataset, indices, transfermode)  {
   getDataList(dataset, indices, transfermode)  
   })
+
+#' @rdname getData-methods
+#' @aliases getData,Dataset,list,,missing-method
 setMethod("getData", c("Dataset", "list", "missing"),  
 function(dataset, indices)  {
   getDataList(dataset, indices, 'JSON')  
   })
 
 
-# private
+# private - perform a single fetch; indices is a vector of
+# type character with one slice per dimension.
 getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
 
     indices <- checkSlices(dataset@shape, indices)
@@ -105,7 +151,6 @@ getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
       '/value?domain=', domain, '&select=', sel)
     response <- submitRequest(request, transfermode=transfermode)
 
-    # !!! test this !!!
     if (singlefetch)  {
       return(as.numeric(response$value))
     }
@@ -149,7 +194,8 @@ getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
     AA <- array(A, dim = rdims)
 }
 
-# private
+# private - split numeric vectors into slices and fetch
+# data in one or more requests.
 getDataList <- function(dataset, indices, transfermode = 'JSON')  {
     if (length(dataset@shape) != length(indices))
       stop("wrong length of indexlist")
@@ -452,7 +498,6 @@ slicify <- function(v)  {
 }
 
 # private - fetch and assemble dataset blocks 
-
 multifetch <- function(LL, dataset)  { 
   slicelen <- function(slc)  {
     ss <- as.numeric(strsplit(slc, ':')[[1]])

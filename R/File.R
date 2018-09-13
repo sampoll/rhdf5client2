@@ -1,9 +1,23 @@
+#' An S4 class to represent an HDF5 file accessible from a server.
+#'
+#' @slot Source an object of type Source
+#' @slot domain the file's domain on the server; more or less, an alias for its 
+#' location in the external server file system
+#' @slot dsetdf a data.frame that caches often-used information about the file
 setClass("File", representation(src="Source", domain="character", dsetdf="data.frame"))
 
-#' constructor for a File 
+#' Construct an object of type File
+#'
+#' A File is a representation of an HDF5 file the contents of which are accessible 
+#' exposed by a HDF5 server. 
+#'
 #' @name File
-#' @param src an object of type Source
-#' @param domain domain string
+#' @param src an object of type Source, the server which exposes the file
+#' @param domain the domain string; the file's location on the server's
+#' file system.
+#' @examples
+#' src <- Source('http://hsdshdflab.hdfgroup.org')
+#' f10x <- File(src, '/shared/bioconductor/tenx_full.h5')
 #' @export 
 File <- function(src, domain)  {
   request <- paste0(src@endpoint, '?domain=', domain)
@@ -12,15 +26,28 @@ File <- function(src, domain)  {
   obj <- new("File", src=src, domain=domain, dsetdf=dsetdf)
 }
 
-#' search inner file hierarchy
-#' @name file an object of type File
+#' Search inner file hierarchy for datasets
+#' 
+#' The datasets in an HDF5 file are organized internally by groups.
+#' This routine traverses the internal group hiearchy, locates
+#' all datasets and prints a list of them. Note that if the 
+#' file's group hiearchy is complex, this could be time-consuming.
+#'
+#' @param file an object of type File to be searched
+#' 
 #' @return a list of inner-paths 
+#' 
+#' @examples
+#' src <- Source('http://hsdshdflab.hdfgroup.org')
+#' f <- File(src, '/home/spollack/testzero.h5')
+#' listDatasets(f)
 #' @export
 listDatasets <- function(file)  {
   file@dsetdf[['paths']]
 }
 
-#' private
+#' private - traverse internal file hiearchy, find datasets, and
+#' cache often-accessed information in a data.frame for the File object.
 findDatasets <- function(src, domain)  {
 
   request <- paste0(src@endpoint, '?domain=', domain)
@@ -54,5 +81,3 @@ findDatasets <- function(src, domain)  {
   data.frame(paths=eee$results, uuids=eee$uuids, stringsAsFactors = FALSE)
 
 }
-
-

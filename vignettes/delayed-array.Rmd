@@ -4,7 +4,7 @@ author: "Samuela Pollack"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 vignette: >
   %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteIndexEntry{h5client -- notes on Bioconductor and remote HDF5}
+  %\VignetteIndexEntry{RHDF5Array DelayedArray backend}
   %\VignetteEncoding{UTF-8}
 output:
   BiocStyle::html_document:

@@ -1,10 +1,10 @@
 ---
-title: "Rhdf5client2 Development Vignette"
+title: "Rhdf5client2 Main Interface Vignette"
 author: "Sam"
 date: "9/1/2018"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteIndexEntry{Main Interface Vignette}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
