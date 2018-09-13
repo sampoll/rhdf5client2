@@ -80,26 +80,6 @@ setClass("RHDF5Matrix", contains=c("DelayedMatrix", "RHDF5Array"))
 
 setMethod("matrixClass", "RHDF5Array", function(x) "RHDF5Matrix")
 
-# Theory 1: there really is a problem with the RHDF5Matrix not having
-# two dimensions. When this is not exported, an invalid RHDF5Matrix
-# object is constructed but no error message is printed.
-
-# Theory 2: there really is not a problem with the RHDF5Matrix not 
-# having two dimensions. When this is not exported, an valid RHDF5Matrix
-# but some bug in the DelayedArray infrastructure causes the 
-# error message to be printed.
-
-# Just doing: build(".", vignette=F) install(vignette=F) causes the 
-# tests to run with no difficulty.
-
-# Running either document() or build_vignettes() causes the tests 
-# to crash.
-
-# It is possibly a problem with as.integer() missing somewhere.
-
-# Fact: calling dim on the DelayedMatrix does not call dim on 
-# its seed, which it seems like it should.
-
 #' @export
 setAs("RHDF5Array", "RHDF5Matrix", function(from)  { 
     new("RHDF5Matrix", from)
