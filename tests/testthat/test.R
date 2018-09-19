@@ -8,6 +8,9 @@ test_that("Both servers found", {
   src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
   doms <- domains(src.chan)
   expect_true('neurons100k.h5s.channingremotedata.org' %in% doms) 
+  doms <- domains(src.chan, 'newsubdir/test/hdfgroup/org')
+  expect_true('newfile.newsubdir.test.h5s.channingremotedata.org' %in% doms) 
+  
 })
 
 context("Files")
@@ -53,5 +56,14 @@ test_that("DelayedArray can be instantiated and accessed",  {
   A <- apply(da[,1:4],2,sum)
   expect_true(all(R == A))
 })
+
+context("Four-dimensional datasets")
+test_that("Higher-dimensional dataset access works correctly",  {
+  src <- Source('http://hsdshdflab.hdfgroup.org')
+  rd <- Dataset(File(src, '/home/spollack/testone.h5'), '/group0/group1/group2/data4d')
+  A <- getData(rd, list(3:4, 8:9, 5:6, 2:3))
+  expect_true(sum(A) == 697)
+})
+
 
 
