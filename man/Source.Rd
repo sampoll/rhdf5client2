@@ -6,6 +6,11 @@
 \usage{
 Source(endpoint, type = "hsds")
 }
+\arguments{
+\item{endpoint}{URL for server}
+
+\item{type}{Type of server software at the source; must be}
+}
 \value{
 An object of type Source
 }

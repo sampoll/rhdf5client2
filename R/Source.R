@@ -11,6 +11,8 @@ setClass("Source", representation(endpoint="character", type="character"))
 #' server (either h5serv or hsds.) 
 #'
 #' @name Source
+#' @param endpoint URL for server 
+#' @param type Type of server software at the source; must be 
 #' @return An object of type Source
 #' @examples
 #' src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
@@ -78,8 +80,8 @@ domainContents <- function(object, rootdir = '/hdfgroup/org')  {
       stop("list overflow")
   }
 
-#' The h5serv API does not have a GET /domains method, so we need
-#' to descend the tree to the requested domain node by UUID's.
+#  The h5serv API does not have a GET /domains method, so we need
+#  to descend the tree to the requested domain node by UUID's.
 
   if (object@type == 'h5serv')  {
     append_if_h5_file <- function(ll, ff)  {

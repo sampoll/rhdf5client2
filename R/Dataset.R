@@ -40,7 +40,11 @@ Dataset <- function(file, path)  {
 #' extract elements of a one or two-dimensional Dataset
 #'
 #' @name [
-#' @aliases [,Dataset-method
+#' @param x object of type Dataset
+#' @param i vector of indices (first dimension)
+#' @aliases [,Dataset-method [,Dataset,numeric-method 
+#'  [,Dataset,numeric,numeric-method [,Dataset,numeric,ANY-method 
+#'  [,Dataset,numeric,ANY,ANY-method
 #' @docType methods
 #' @rdname extract-methods
 #'
@@ -403,6 +407,7 @@ slicelen <- function(slc)  {
 
 # private - extract binary data from response
 # reference: https://support.hdfgroup.org/HDF5/doc1.8/RM/PredefDTypes.html
+#' @importFrom utils strcapture
 extractBinary <- function(typ, nele, rsp)  {
 
   # standard defaults

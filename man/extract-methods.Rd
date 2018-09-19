@@ -4,9 +4,18 @@
 \name{[}
 \alias{[}
 \alias{[,Dataset-method}
+\alias{[,Dataset,numeric-method}
+\alias{[,Dataset,numeric,numeric-method}
+\alias{[,Dataset,numeric,ANY-method}
+\alias{[,Dataset,numeric,ANY,ANY-method}
 \title{extract elements of a one or two-dimensional Dataset}
 \usage{
-\S4method{[}{Dataset,numeric,ANY}(x, i)
+\S4method{[}{Dataset,numeric,ANY,ANY}(x, i)
+}
+\arguments{
+\item{x}{object of type Dataset}
+
+\item{i}{vector of indices (first dimension)}
 }
 \description{
 extract elements of a one or two-dimensional Dataset

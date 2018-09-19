@@ -46,8 +46,8 @@ listDatasets <- function(file)  {
   file@dsetdf[['paths']]
 }
 
-#' private - traverse internal file hiearchy, find datasets, and
-#' cache often-accessed information in a data.frame for the File object.
+#  private - traverse internal file hiearchy, find datasets, and
+#  cache often-accessed information in a data.frame for the File object.
 findDatasets <- function(src, domain)  {
 
   request <- paste0(src@endpoint, '?domain=', domain)
