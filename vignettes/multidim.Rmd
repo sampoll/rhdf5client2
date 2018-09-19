@@ -11,7 +11,7 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-Sys.setenv('RETICULATE_PYTHON'='/anaconda/bin/python')
+Sys.setenv('RETICULATE_PYTHON'=Sys.getenv("RETICULATE_PYTHON"))
 library(rhdf5client2)
 library(reticulate)
 ```

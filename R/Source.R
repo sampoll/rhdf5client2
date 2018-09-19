@@ -40,6 +40,8 @@ Source <- function(endpoint, type='hsds')  {
 #' @rdname domains-methods
 #'
 #' @examples
+#' src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
+#' src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
 #' domains(src.chan)
 #' domains(src.hsds, '/home/jreadey')
 setGeneric('domains', function(object, rootdir) standardGeneric('domains'))

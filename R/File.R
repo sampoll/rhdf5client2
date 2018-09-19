@@ -87,8 +87,8 @@ setMethod("show", "File", function(object) {
  cat("  use listDatasets(...) and Dataset(..., [dataset name]) for more content.\n")
 })
 
-setMethod("show", "Dataset", function(object) {
- cat(paste("rhdf5client2 Dataset instance, with shape "))
- dput(object@shape)
- cat("  use getData(...) or square brackets to retrieve content.\n")
-})
+#setMethod("show", "Dataset", function(object) {
+# cat(paste("rhdf5client2 Dataset instance, with shape "))
+# dput(object@shape)
+# cat("  use getData(...) or square brackets to retrieve content.\n")
+#})
