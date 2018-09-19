@@ -1,5 +1,5 @@
 #' An S4 class to represent a dataset in a HDF5 file.
-#'
+#' @import BiocGenerics httr methods rjson
 #' @slot file An object of type File; the file in which the dataset is resident.
 #' @slot path The dataset's path in the internal HDF5 hiearchy.
 #' @slot uuid The unique unit ID by which the dataset is accessed in the server 
@@ -81,7 +81,7 @@ setMethod('[', c("Dataset", "numeric", "numeric"),
 #' f <- File(s, '/shared/bioconductor/tenx_full.h5')
 #' d <- Dataset(f, '/newassay001')
 #' x <- getData(d, c('1:4', '1:27998'), transfermode='JSON')
-#' x <- getData(d, c(1:4, 1:27998), transfermode='JSON')
+#' # x <- getData(d, c(1:4, 1:27998), transfermode='JSON') # method missing?
 #' x <- d[1:4,1:27998]
 setGeneric("getData", function(dataset, indices, transfermode) standardGeneric("getData"))
 
@@ -557,4 +557,10 @@ multifetch <- function(LL, dataset)  {
 
   R
 }
+
+setMethod("show", "Dataset", function(object) {
+ cat(paste("rhdf5client2 Dataset instance, with shape "))
+ dput(object@shape)
+ cat("  use getData(...) or square brackets to retrieve content.\n")
+})
 
