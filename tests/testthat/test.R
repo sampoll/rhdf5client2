@@ -63,7 +63,7 @@ test_that("Higher-dimensional dataset access works correctly",  {
   rd <- HSDSDataset(HSDSFile(src, '/home/spollack/testone.h5'), '/group0/group1/group2/data4d')
   A <- getData(rd, list(3:4, 8:9, 5:6, 2:3))
   expect_true(sum(A) == 697)
-  dt <- Dataset(File(src, '/home/spollack/testone.h5'), '/group0/group1/dataR')
+  dt <- HSDSDataset(HSDSFile(src, '/home/spollack/testone.h5'), '/group0/group1/dataR')
   B <- getData(dt, list(c(4), c(2, 3, 5, 6), c(5), 1:3))
   R <- array(c(3140, 3240, 3440, 3540, 3141, 3241, 3441, 3541, 3142, 
       3242, 3442, 3542), dim=c(4,3))

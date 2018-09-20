@@ -155,11 +155,32 @@ getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
       '/value?domain=', domain, '&select=', sel)
     response <- submitRequest(request, transfermode=transfermode)
 
-    if (singlefetch)  {
+    if (singlefetch)  {  
       return(as.numeric(response$value))
     }
 
-    # browser()
+    if (length(rdims) == 1 && length(sdims) == 1)  {    # 1D array quick bypass
+      return(as.numeric(response$value))
+    }
+
+    if (length(rdims) == 2 && length(sdims) == 1)  {    # 2D array quick bypass
+      if (transfermode == 'JSON')  {
+        result <- response$value 
+        A <- matrix(nrow = rdims[1], ncol = rdims[2])
+        for (i in 1:rdims[1])  {
+          A[i,] <- as.numeric(result[[i]])
+        }
+        return(A)
+      } else if (transfermode == 'binary')  {
+        result <- extractBinary(dataset@type, prod(rdims), response)
+        A <- matrix(data=result, nrow = rdims[2], ncol = rdims[1])
+        return(t(A))
+      }
+    }
+
+    # TODO: this data unpacking system is very slow, 
+    # because transfer is done element-by-element.
+    # Put it in C or find an R workaround
 
     nn <- prod(rdims)
     A <- array(rep(0, nn))
@@ -196,6 +217,7 @@ getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
     # the calling routine redimension.
 
     AA <- array(A, dim = rdims)
+    AA
 }
 
 # private - split numeric vectors into slices and fetch
