@@ -3,25 +3,25 @@
 #' @slot endpoint URL for server 
 #' @slot type Type of server software at the source; must be 
 #' either 'h5serv' or (default) 'hsds' 
-setClass("Source", representation(endpoint="character", type="character"))
+setClass("HSDSSource", representation(endpoint="character", type="character"))
 
-#' Construct an object of type Source.
+#' Construct an object of type HSDSSource.
 #'
-#' A Source is a representation of a URL which provides access to a HDF5 
+#' A HSDSSource is a representation of a URL which provides access to a HDF5 
 #' server (either h5serv or hsds.) 
 #'
-#' @name Source
+#' @name HSDSSource
 #' @param endpoint URL for server 
 #' @param type Type of server software at the source; must be 
-#' @return An object of type Source
+#' @return An object of type HSDSSource
 #' @examples
-#' src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
-#' src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
+#' src.hsds <- HSDSSource('http://hsdshdflab.hdfgroup.org')
+#' src.chan <- HSDSSource('http://h5s.channingremotedata.org:5000', 'h5serv')
 #' @export
-Source <- function(endpoint, type='hsds')  {
+HSDSSource <- function(endpoint, type='hsds')  {
   if (!(type %in% c('h5serv', 'hsds')))
     stop(paste("unknown server type ", type))
-  obj <- new("Source", endpoint=endpoint, type=type)
+  obj <- new("HSDSSource", endpoint=endpoint, type=type)
   # member root id also?
 }
 
@@ -31,9 +31,9 @@ Source <- function(endpoint, type='hsds')  {
 #' will be non-recursive. I.e., output for domain '/home/jreadey/' will 
 #' not return the files in '/home/jreadey/HDFLabTutorial/'
 #'
-#' @param object An object of type Source 
+#' @param object An object of type HSDSSource 
 #'
-#' @param rootdir A slash-separated directory in the Source file system. 
+#' @param rootdir A slash-separated directory in the HSDSSource file system. 
 #'
 #' @return a vector of domains in the rootdir
 #'
@@ -42,31 +42,31 @@ Source <- function(endpoint, type='hsds')  {
 #' @rdname domains-methods
 #'
 #' @examples
-#' src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
-#' src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
+#' src.hsds <- HSDSSource('http://hsdshdflab.hdfgroup.org')
+#' src.chan <- HSDSSource('http://h5s.channingremotedata.org:5000', 'h5serv')
 #' domains(src.chan)
 #' domains(src.hsds, '/home/jreadey')
 setGeneric('domains', function(object, rootdir) standardGeneric('domains'))
 
 #' @rdname domains-methods
-#' @aliases domains,Source,character-method
-setMethod('domains', c("Source", "character"), 
+#' @aliases domains,HSDSSource,character-method
+setMethod('domains', c("HSDSSource", "character"), 
   function(object, rootdir)  {
     ll <- domainContents(object, rootdir)
     vapply(ll, function(l) l$filename, character(1))
   })
 
 #' @rdname domains-methods
-#' @aliases domains,Source,missing-method
-setMethod('domains', c("Source", "missing"),  
+#' @aliases domains,HSDSSource,missing-method
+setMethod('domains', c("HSDSSource", "missing"),  
   function(object) { 
     domains(object, '/hdfgroup/org') 
   })
 
 # private
 domainContents <- function(object, rootdir = '/hdfgroup/org')  {
-  if (!(is(object, "Source")))
-    stop("getDomains called on a non-Source object")
+  if (!(is(object, "HSDSSource")))
+    stop("getDomains called on a non-HSDSSource object")
 
   # result list
   rlistsz <- 1000

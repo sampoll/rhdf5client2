@@ -7,7 +7,7 @@
 listDatasets(file)
 }
 \arguments{
-\item{file}{an object of type File to be searched}
+\item{file}{an object of type HSDSFile to be searched}
 }
 \value{
 a list of inner-paths
@@ -19,7 +19,7 @@ all datasets and prints a list of them. Note that if the
 file's group hiearchy is complex, this could be time-consuming.
 }
 \examples{
-src <- Source('http://hsdshdflab.hdfgroup.org')
-f <- File(src, '/home/spollack/testzero.h5')
+src <- HSDSSource('http://hsdshdflab.hdfgroup.org')
+f <- HSDSFile(src, '/home/spollack/testzero.h5')
 listDatasets(f)
 }

@@ -1,27 +1,27 @@
 #' An S4 class to represent a dataset in a HDF5 file.
 #' @import BiocGenerics httr methods rjson
-#' @slot file An object of type File; the file in which the dataset is resident.
+#' @slot file An object of type HSDSFile; the file in which the dataset is resident.
 #' @slot path The dataset's path in the internal HDF5 hiearchy.
 #' @slot uuid The unique unit ID by which the dataset is accessed in the server 
 #' database system.
 #' @slot shape The dimensions of the dataset
 #' @slot type The dataset's HDF5 datatype
-setClass("Dataset", representation(file="File", path="character", uuid="character",
+setClass("HSDSDataset", representation(file="HSDSFile", path="character", uuid="character",
   shape="numeric", type="list"))
 
-#' Construct an object of type Dataset 
+#' Construct an object of type HSDSDataset 
 #' 
-#' A Dataset is a representation of a dataset in a HDF5 file.
+#' A HSDSDataset is a representation of a dataset in a HDF5 file.
 #' 
-#' @name Dataset
-#' @param file An object of type File which hosts the dataset 
+#' @name HSDSDataset
+#' @param file An object of type HSDSFile which hosts the dataset 
 #' @param path The complete intrafile path to the dataset
 #' @examples
-#' src <- Source('http://hsdshdflab.hdfgroup.org')
-#' f <- File(src, '/home/spollack/testzero.h5')
-#' d <- Dataset(f, '/grpA/grpAB/dsetX')
+#' src <- HSDSSource('http://hsdshdflab.hdfgroup.org')
+#' f <- HSDSFile(src, '/home/spollack/testzero.h5')
+#' d <- HSDSDataset(f, '/grpA/grpAB/dsetX')
 #' @export
-Dataset <- function(file, path)  {
+HSDSDataset <- function(file, path)  {
 
   idx <- which(file@dsetdf[,1] == path)
   if (length(idx) == 0)  
@@ -33,29 +33,29 @@ Dataset <- function(file, path)  {
   shape <- response$shape$dims
   type <- list(class=response$type$class, base=response$type$base)
 
-  obj <- new("Dataset", file=file, path=path, uuid=uuid,
+  obj <- new("HSDSDataset", file=file, path=path, uuid=uuid,
     shape=shape, type=type)
 }
 
-#' extract elements of a one or two-dimensional Dataset
+#' extract elements of a one or two-dimensional HSDSDataset
 #'
 #' @name [
-#' @param x object of type Dataset
+#' @param x object of type HSDSDataset
 #' @param i vector of indices (first dimension)
-#' @aliases [,Dataset-method [,Dataset,numeric-method 
-#'  [,Dataset,numeric,numeric-method [,Dataset,numeric,ANY-method 
-#'  [,Dataset,numeric,ANY,ANY-method
+#' @aliases [,HSDSDataset-method [,HSDSDataset,numeric-method 
+#'  [,HSDSDataset,numeric,numeric-method [,HSDSDataset,numeric,ANY-method 
+#'  [,HSDSDataset,numeric,ANY,ANY-method
 #' @docType methods
 #' @rdname extract-methods
 #'
 # special case: one-dimensional arrays
-setMethod('[', c("Dataset", "numeric"), 
+setMethod('[', c("HSDSDataset", "numeric"), 
   function(x, i) {
     getDataList(x, list(i), transfermode='JSON')
   })
 
 # special case: two-dimensional arrays
-setMethod('[', c("Dataset", "numeric", "numeric"), 
+setMethod('[', c("HSDSDataset", "numeric", "numeric"), 
   function(x, i, j) {
     getDataList(x, list(i, j), transfermode='JSON')
   })
@@ -68,7 +68,7 @@ setMethod('[', c("Dataset", "numeric", "numeric"),
 #' multiple requests. This is opaque to the user, but may enter into 
 #' considerations of data access patterns, e.g., for performance-tuning.
 #'
-#' @param dataset An object of type Dataset, the dataset to access.
+#' @param dataset An object of type HSDSDataset, the dataset to access.
 #'
 #' @param indices The indices of the data to fetch
 #'
@@ -76,43 +76,43 @@ setMethod('[', c("Dataset", "numeric", "numeric"),
 #'
 #' @return an Array containing the data fetched from the server
 #'
-#' @export 
 #' @docType methods
 #' @rdname getData-methods
 #'
 #' @examples
-#' s <- Source('http://hsdshdflab.hdfgroup.org')
-#' f <- File(s, '/shared/bioconductor/tenx_full.h5')
-#' d <- Dataset(f, '/newassay001')
+#' s <- HSDSSource('http://hsdshdflab.hdfgroup.org')
+#' f <- HSDSFile(s, '/shared/bioconductor/tenx_full.h5')
+#' d <- HSDSDataset(f, '/newassay001')
 #' x <- getData(d, c('1:4', '1:27998'), transfermode='JSON')
 #' # x <- getData(d, c(1:4, 1:27998), transfermode='JSON') # method missing?
 #' x <- d[1:4,1:27998]
+#' @export 
 setGeneric("getData", function(dataset, indices, transfermode) standardGeneric("getData"))
 
 #' @rdname getData-methods
-#' @aliases getData,Dataset,character,character-method
-setMethod("getData", c("Dataset", "character", "character"),  
+#' @aliases getData,HSDSDataset,character,character-method
+setMethod("getData", c("HSDSDataset", "character", "character"),  
   function(dataset, indices, transfermode)  {
     getDataVec(dataset, indices, transfermode)
   })
 
 #' @rdname getData-methods
-#' @aliases getData,Dataset,character,missing-method
-setMethod("getData", c("Dataset", "character", "missing"),  
+#' @aliases getData,HSDSDataset,character,missing-method
+setMethod("getData", c("HSDSDataset", "character", "missing"),  
   function(dataset, indices)  {
     getDataVec(dataset, indices, 'JSON')
   })
 
 #' @rdname getData-methods
-#' @aliases getData,Dataset,list,character-method
-setMethod("getData", c("Dataset", "list", "character"),  
+#' @aliases getData,HSDSDataset,list,character-method
+setMethod("getData", c("HSDSDataset", "list", "character"),  
 function(dataset, indices, transfermode)  {
   getDataList(dataset, indices, transfermode)  
   })
 
 #' @rdname getData-methods
-#' @aliases getData,Dataset,list,,missing-method
-setMethod("getData", c("Dataset", "list", "missing"),  
+#' @aliases getData,HSDSDataset,list,,missing-method
+setMethod("getData", c("HSDSDataset", "list", "missing"),  
 function(dataset, indices)  {
   getDataList(dataset, indices, 'JSON')  
   })
@@ -563,8 +563,8 @@ multifetch <- function(LL, dataset)  {
   R
 }
 
-setMethod("show", "Dataset", function(object) {
- cat(paste("rhdf5client2 Dataset instance, with shape "))
+setMethod("show", "HSDSDataset", function(object) {
+ cat(paste("rhdf5client2 HSDSDataset instance, with shape "))
  dput(object@shape)
  cat("  use getData(...) or square brackets to retrieve content.\n")
 })
