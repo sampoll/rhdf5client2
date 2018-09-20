@@ -163,7 +163,7 @@ getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
       return(as.numeric(response$value))
     }
 
-    if (length(rdims) == 2 && length(sdims) == 1)  {    # 2D array quick bypass
+    if (length(rdims) == 2 && length(sdims) == 2)  {    # 2D array quick bypass
       if (transfermode == 'JSON')  {
         result <- response$value 
         A <- matrix(nrow = rdims[1], ncol = rdims[2])
@@ -234,7 +234,7 @@ getDataList <- function(dataset, indices, transfermode = 'JSON')  {
       AA <- multifetch(slicelist, dataset)
     } else  {
       # simple case: one block
-      AA <- getData(dataset, unlist(slicelist), transfermode)
+      AA <- getDataVec(dataset, unlist(slicelist), transfermode)
     }
     AA
 
