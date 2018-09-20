@@ -63,7 +63,28 @@ test_that("Higher-dimensional dataset access works correctly",  {
   rd <- Dataset(File(src, '/home/spollack/testone.h5'), '/group0/group1/group2/data4d')
   A <- getData(rd, list(3:4, 8:9, 5:6, 2:3))
   expect_true(sum(A) == 697)
+  dt <- Dataset(File(src, '/home/spollack/testone.h5'), '/group0/group1/dataR')
+  B <- getData(dt, list(c(4), c(2, 3, 5, 6), c(5), 1:3))
+  R <- array(c(3140, 3240, 3440, 3540, 3141, 3241, 3441, 3541, 3142, 
+      3242, 3442, 3542), dim=c(4,3))
+  expect_true(all(B == R))
+
 })
+
+context("Decomposition into slices")
+test_that("Bad slices rejected",  {
+  tf <- checkSlices(c(10, 20, 30), c('5:', ':', ':8'))
+  ok <- c('4:10:1', '0:20:1', '0:8:1')
+  expect_true(all(unlist(tf) == ok))
+  expect_error(checkSlices(c(10, 20, 30), c('5:20', ':', ':8'),
+    regexp='stop out of range'))
+  expect_error(checkSlices(c(10, 20, 30), c('10:5', ':', ':8'),
+    regexp='slice stop less than slice start'))
+  expect_error(checkSlices(c(10, 20, 30), c('5:10,0.5', ':', ':8'),
+    regexp='malformed slice'))
+})
+
+
 
 
 
