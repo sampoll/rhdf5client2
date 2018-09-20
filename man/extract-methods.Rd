@@ -3,20 +3,20 @@
 \docType{methods}
 \name{[}
 \alias{[}
-\alias{[,Dataset-method}
-\alias{[,Dataset,numeric-method}
-\alias{[,Dataset,numeric,numeric-method}
-\alias{[,Dataset,numeric,ANY-method}
-\alias{[,Dataset,numeric,ANY,ANY-method}
-\title{extract elements of a one or two-dimensional Dataset}
+\alias{[,HSDSDataset-method}
+\alias{[,HSDSDataset,numeric-method}
+\alias{[,HSDSDataset,numeric,numeric-method}
+\alias{[,HSDSDataset,numeric,ANY-method}
+\alias{[,HSDSDataset,numeric,ANY,ANY-method}
+\title{extract elements of a one or two-dimensional HSDSDataset}
 \usage{
-\S4method{[}{Dataset,numeric,ANY,ANY}(x, i)
+\S4method{[}{HSDSDataset,numeric,ANY}(x, i)
 }
 \arguments{
-\item{x}{object of type Dataset}
+\item{x}{object of type HSDSDataset}
 
 \item{i}{vector of indices (first dimension)}
 }
 \description{
-extract elements of a one or two-dimensional Dataset
+extract elements of a one or two-dimensional HSDSDataset
 }

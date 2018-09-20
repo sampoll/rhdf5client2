@@ -3,26 +3,27 @@
 \docType{methods}
 \name{getData}
 \alias{getData}
-\alias{getData,Dataset,character,character-method}
-\alias{getData,Dataset,character,missing-method}
-\alias{getData,Dataset,list,character-method}
-\alias{getData,Dataset,list,missing-method}
-\alias{getData,Dataset,list,,missing-method}
+\alias{getData,HSDSDataset,character,character-method}
+\alias{getData,HSDSDataset,character,missing-method}
+\alias{getData,HSDSDataset,list,character-method}
+\alias{getData,HSDSDataset,list,missing-method}
+\alias{getData,HSDSDataset,list,,missing-method}
 \title{Fetch data from a remote dataset}
 \usage{
 getData(dataset, indices, transfermode)
 
-\S4method{getData}{Dataset,character,character}(dataset, indices,
+\S4method{getData}{HSDSDataset,character,character}(dataset, indices,
   transfermode)
 
-\S4method{getData}{Dataset,character,missing}(dataset, indices)
+\S4method{getData}{HSDSDataset,character,missing}(dataset, indices)
 
-\S4method{getData}{Dataset,list,character}(dataset, indices, transfermode)
+\S4method{getData}{HSDSDataset,list,character}(dataset, indices,
+  transfermode)
 
-\S4method{getData}{Dataset,list,missing}(dataset, indices)
+\S4method{getData}{HSDSDataset,list,missing}(dataset, indices)
 }
 \arguments{
-\item{dataset}{An object of type Dataset, the dataset to access.}
+\item{dataset}{An object of type HSDSDataset, the dataset to access.}
 
 \item{indices}{The indices of the data to fetch}
 
@@ -39,9 +40,9 @@ multiple requests. This is opaque to the user, but may enter into
 considerations of data access patterns, e.g., for performance-tuning.
 }
 \examples{
-s <- Source('http://hsdshdflab.hdfgroup.org')
-f <- File(s, '/shared/bioconductor/tenx_full.h5')
-d <- Dataset(f, '/newassay001')
+s <- HSDSSource('http://hsdshdflab.hdfgroup.org')
+f <- HSDSFile(s, '/shared/bioconductor/tenx_full.h5')
+d <- HSDSDataset(f, '/newassay001')
 x <- getData(d, c('1:4', '1:27998'), transfermode='JSON')
 # x <- getData(d, c(1:4, 1:27998), transfermode='JSON') # method missing?
 x <- d[1:4,1:27998]

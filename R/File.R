@@ -1,29 +1,29 @@
 #' An S4 class to represent an HDF5 file accessible from a server.
 #'
-#' @slot Source an object of type Source
+#' @slot HSDSSource an object of type HSDSSource
 #' @slot domain the file's domain on the server; more or less, an alias for its 
 #' location in the external server file system
 #' @slot dsetdf a data.frame that caches often-used information about the file
-setClass("File", representation(src="Source", domain="character", dsetdf="data.frame"))
+setClass("HSDSFile", representation(src="HSDSSource", domain="character", dsetdf="data.frame"))
 
-#' Construct an object of type File
+#' Construct an object of type HSDSFile
 #'
-#' A File is a representation of an HDF5 file the contents of which are accessible 
+#' A HSDSFile is a representation of an HDF5 file the contents of which are accessible 
 #' exposed by a HDF5 server. 
 #'
-#' @name File
-#' @param src an object of type Source, the server which exposes the file
+#' @name HSDSFile
+#' @param src an object of type HSDSSource, the server which exposes the file
 #' @param domain the domain string; the file's location on the server's
 #' file system.
 #' @examples
-#' src <- Source('http://hsdshdflab.hdfgroup.org')
-#' f10x <- File(src, '/shared/bioconductor/tenx_full.h5')
+#' src <- HSDSSource('http://hsdshdflab.hdfgroup.org')
+#' f10x <- HSDSFile(src, '/shared/bioconductor/tenx_full.h5')
 #' @export 
-File <- function(src, domain)  {
+HSDSFile <- function(src, domain)  {
   request <- paste0(src@endpoint, '?domain=', domain)
   try(response <- submitRequest(request))  # crashes if not a file domain
   dsetdf <- findDatasets(src, domain)
-  obj <- new("File", src=src, domain=domain, dsetdf=dsetdf)
+  obj <- new("HSDSFile", src=src, domain=domain, dsetdf=dsetdf)
 }
 
 #' Search inner file hierarchy for datasets
@@ -33,13 +33,13 @@ File <- function(src, domain)  {
 #' all datasets and prints a list of them. Note that if the 
 #' file's group hiearchy is complex, this could be time-consuming.
 #'
-#' @param file an object of type File to be searched
+#' @param file an object of type HSDSFile to be searched
 #' 
 #' @return a list of inner-paths 
 #' 
 #' @examples
-#' src <- Source('http://hsdshdflab.hdfgroup.org')
-#' f <- File(src, '/home/spollack/testzero.h5')
+#' src <- HSDSSource('http://hsdshdflab.hdfgroup.org')
+#' f <- HSDSFile(src, '/home/spollack/testzero.h5')
 #' listDatasets(f)
 #' @export
 listDatasets <- function(file)  {
@@ -47,7 +47,7 @@ listDatasets <- function(file)  {
 }
 
 #  private - traverse internal file hiearchy, find datasets, and
-#  cache often-accessed information in a data.frame for the File object.
+#  cache often-accessed information in a data.frame for the HSDSFile object.
 findDatasets <- function(src, domain)  {
 
   request <- paste0(src@endpoint, '?domain=', domain)
@@ -81,14 +81,14 @@ findDatasets <- function(src, domain)  {
   data.frame(paths=eee$results, uuids=eee$uuids, stringsAsFactors = FALSE)
 
 }
-setMethod("show", "File", function(object) {
- cat(paste("rhdf5client2 File instance from source", object@src@endpoint, "\n"))
+setMethod("show", "HSDSFile", function(object) {
+ cat(paste("rhdf5client2 HSDSFile instance from source", object@src@endpoint, "\n"))
  cat(paste("  domain: ", object@domain, "\n"))
- cat("  use listDatasets(...) and Dataset(..., [dataset name]) for more content.\n")
+ cat("  use listDatasets(...) and HSDSDataset(..., [dataset name]) for more content.\n")
 })
 
-#setMethod("show", "Dataset", function(object) {
-# cat(paste("rhdf5client2 Dataset instance, with shape "))
+#setMethod("show", "HSDSDataset", function(object) {
+# cat(paste("rhdf5client2 HSDSDataset instance, with shape "))
 # dput(object@shape)
 # cat("  use getData(...) or square brackets to retrieve content.\n")
 #})

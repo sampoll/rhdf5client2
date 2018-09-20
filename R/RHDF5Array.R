@@ -1,55 +1,55 @@
-#' RHDF5ArraySeed for RHDF5Array backend to DelayedArray
+#' HSDSArraySeed for HSDSArray backend to DelayedArray
 #'
-#' @name RHDF5ArraySeed
+#' @name HSDSArraySeed
 #' @slot endpoint URL of remote server
 #' @slot svrtype type of server, must be either 'hsds' or 'h5serv'
 #' @slot domain HDF5 domain of H5 file on server
 #' @slot dsetname complete internal path to dataset in H5 file
-#' @slot dataset object of type Dataset for access to the H5 dataset
-#' @aliases RHDF5ArraySeed-class
+#' @slot dataset object of type HSDSDataset for access to the H5 dataset
+#' @aliases HSDSArraySeed-class
 #' @import DelayedArray
-#' @exportClass RHDF5ArraySeed
-setClass("RHDF5ArraySeed", contains=c("Array"), 
+#' @exportClass HSDSArraySeed
+setClass("HSDSArraySeed", contains=c("Array"), 
   slots = c(endpoint="character",    # URL
             svrtype="character",     # 'h5serv' or 'hsds'
             domain="character",      # extra-file (file system) path
             dsetname="character",    # complete intra-file path
-            dataset="Dataset")       # Dataset object 
+            dataset="HSDSDataset")       # HSDSDataset object 
 )
 
-#' Construct an object of type RHDF5ArraySeed 
+#' Construct an object of type HSDSArraySeed 
 #' 
-#' @name RHDF5ArraySeed
+#' @name HSDSArraySeed
 #' 
 #' @param endpoint URL of remote server
 #' @param svrtype type of server, must be either 'hsds' or 'h5serv'
 #' @param domain HDF5 domain of H5 file on server
 #' @param dsetname complete internal path to dataset in H5 file
-#' @return An initialized object of type RHDF5ArraySeed
-#' @export RHDF5ArraySeed
-RHDF5ArraySeed <- function(endpoint, svrtype, domain, dsetname)  {
-  src <- rhdf5client2::Source(endpoint, svrtype)
-  fle <- rhdf5client2::File(src, domain)
-  dset <- rhdf5client2::Dataset(fle, dsetname)
-  new("RHDF5ArraySeed", endpoint=endpoint, svrtype=svrtype, domain=domain, 
+#' @return An initialized object of type HSDSArraySeed
+#' @export 
+HSDSArraySeed <- function(endpoint, svrtype, domain, dsetname)  {
+  src <- rhdf5client2::HSDSSource(endpoint, svrtype)
+  fle <- rhdf5client2::HSDSFile(src, domain)
+  dset <- rhdf5client2::HSDSDataset(fle, dsetname)
+  new("HSDSArraySeed", endpoint=endpoint, svrtype=svrtype, domain=domain, 
       dsetname=dsetname, dataset=dset)
 }
 
-#' Obtain names of dimensions for an object of type RHDF5ArraySeed
+#' Obtain names of dimensions for an object of type HSDSArraySeed
 #' 
 #' (required by DelayedArray seed contract, returns NULL list)
 #' 
 #' @name dimnames
-#' @param x An object of type RHDF5ArraySeed
+#' @param x An object of type HSDSArraySeed
 #' @return A NULL list of length equal to the array dimensionality
-#' @aliases dimnames,RHDF5ArraySeed-method
+#' @aliases dimnames,HSDSArraySeed-method
 #' @export
-setMethod("dimnames", "RHDF5ArraySeed", function(x)  {
+setMethod("dimnames", "HSDSArraySeed", function(x)  {
   n <- length(x@dataset@shape)
   rt <- vector(mode="list", length=n)   # null list
 })
 
-#' Obtain dimensions of an object of type RHDF5ArraySeed
+#' Obtain dimensions of an object of type HSDSArraySeed
 #' 
 #' (required by DelayedArray seed contract)
 #' HDF server content is assumed transposed relative to R matrix layout.
@@ -59,18 +59,18 @@ setMethod("dimnames", "RHDF5ArraySeed", function(x)  {
 #' rows and samples in columns.
 #' 
 #' @name dim
-#' @param x An object of type RHDF5ArraySeed
+#' @param x An object of type HSDSArraySeed
 #' @return A numeric vector of the dimensions
-#' @aliases dim,RHDF5ArraySeed-method
+#' @aliases dim,HSDSArraySeed-method
 #' @export
-setMethod("dim", "RHDF5ArraySeed", function(x)  {
+setMethod("dim", "HSDSArraySeed", function(x)  {
    as.integer(rev(x@dataset@shape))   # Could be this??? Don't assign?
 })
 
-#' Access dataset backed by an RHDF5ArraySeed
+#' Access dataset backed by an HSDSArraySeed
 #'
 #' @name extract_array
-#' @param x An object of type RHDF5ArraySeed
+#' @param x An object of type HSDSArraySeed
 #' @param index A list of numeric vectors to be accessed, one vector 
 #' for each dimension of the array object. A NULL vector indicates
 #' the entire range of indices in that dimension. A zero-length
@@ -80,13 +80,13 @@ setMethod("dim", "RHDF5ArraySeed", function(x)  {
 #' 
 #' @return An array containing the data elements corresponding to the 
 #' indices requested
-#' @aliases extract_array,RHDF5ArraySeed-method
+#' @aliases extract_array,HSDSArraySeed-method
 #' 
 #' @export
 #'
 # TODO: seed contract requires repeated and descending indices 
 # (e.g., c(1,2,3,3,2,1)) be returned correctly. 
-setMethod("extract_array", "RHDF5ArraySeed", function(x, index)  {
+setMethod("extract_array", "HSDSArraySeed", function(x, index)  {
   index <- rev(index)
 
   # two special cases
@@ -128,50 +128,49 @@ setMethod("extract_array", "RHDF5ArraySeed", function(x, index)  {
 
 #' A DelayedArray backend for accessing a remote HDF5 server.
 #' 
-#' @name RHDF5Array 
-#' @family  RHDF5Array
-#' @aliases RHDF5Array-class
-#' @exportClass RHDF5Array
-setClass("RHDF5Array", contains="DelayedArray")
+#' @name HSDSArray 
+#' @family  HSDSArray
+#' @aliases HSDSArray-class
+#' @exportClass HSDSArray
+setClass("HSDSArray", contains="DelayedArray")
 
-#' DelayedMatrix subclass for a two-dimensional RHDF5Array
+#' DelayedMatrix subclass for a two-dimensional HSDSArray
 #'
-#' @name RHDF5Matrix
-#' @family  RHDF5Array
-#' @aliases RHDF5Matrix-class
-#' @exportClass RHDF5Matrix
-setClass("RHDF5Matrix", contains=c("DelayedMatrix", "RHDF5Array"))
+#' @name HSDSMatrix
+#' @family  HSDSArray
+#' @aliases HSDSMatrix-class
+#' @exportClass HSDSMatrix
+setClass("HSDSMatrix", contains=c("DelayedMatrix", "HSDSArray"))
 
-setMethod("matrixClass", "RHDF5Array", function(x) "RHDF5Matrix")
+setMethod("matrixClass", "HSDSArray", function(x) "HSDSMatrix")
 
-#' @export
-setAs("RHDF5Array", "RHDF5Matrix", function(from)  { 
-    new("RHDF5Matrix", from)
+setAs("HSDSArray", "HSDSMatrix", function(from)  { 
+    new("HSDSMatrix", from)
   }
 )
 
-#' Coercion method from RHDF5Matrix to its superclass RHDF5Array
+#' Coercion method from HSDSMatrix to its superclass HSDSArray
 #'
 #' @name as
-#' @family  RHDF5Array
-#' @export
-setAs("RHDF5Matrix", "RHDF5Array", function(from) from)   # no-op
+#' @family  HSDSArray
+
+setAs("HSDSMatrix", "HSDSArray", function(from) from)   # no-op
 
 #' @importFrom DelayedArray new_DelayedArray
-setMethod("DelayedArray", "RHDF5ArraySeed", 
+setMethod("DelayedArray", "HSDSArraySeed", 
   function(seed)   
-    new_DelayedArray(seed, Class="RHDF5Array") 
+    new_DelayedArray(seed, Class="HSDSArray") 
 )
 
-#' Construct an object of type RHDF5Array directly from the data
+#' Construct an object of type HSDSArray directly from the data
 #' members of its seed
 #'
 #' @param endpoint URL of remote server
 #' @param svrtype type of server, must be either 'hsds' or 'h5serv'
 #' @param domain HDF5 domain of H5 file on server
 #' @param dsetname complete internal path to dataset in H5 file
-#' @return An initialized object of type RHDF5Array
+#' @return An initialized object of type HSDSArray
 #' @export
-RHDF5Array <- function(endpoint, svrtype, domain, dsetname)  {
-  DelayedArray(RHDF5ArraySeed(endpoint, svrtype, domain, dsetname))
+HSDSArray <- function(endpoint, svrtype, domain, dsetname)  {
+  DelayedArray(HSDSArraySeed(endpoint, svrtype, domain, dsetname))
 }

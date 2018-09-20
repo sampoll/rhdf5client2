@@ -1,14 +1,15 @@
 Package: rhdf5client2
 Title: Reorganization of rhdf5client code
-Version: 0.0.0.90021
+Version: 0.0.1
 Authors@R: person("Sam", "Pollack", email = "spollack@jimmy.harvard.edu", role = c("aut", "cre"))
 Description: This package provides access to HDF5 files maintained on two types of remote server provided by the HDFGroup; the obsolescent prototype h5serv server and its successor, the more robust hsds server.
 Depends: R (>= 3.5.0), httr, DelayedArray, methods,
 	BiocGenerics, rjson 
 License: Artistic-2.0
 Encoding: UTF-8
+Import: utils
 LazyData: true
-Suggests: knitr, rmarkdown,
+Suggests: knitr, rmarkdown, reticulate,
     testthat
 VignetteBuilder: knitr
 Collate: 
@@ -18,3 +19,4 @@ Collate:
     'Dataset.R'
     'RHDF5Array.R'
 RoxygenNote: 6.1.0
+biocViews: DataImport, Infrastructure

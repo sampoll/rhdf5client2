@@ -3,20 +3,20 @@
 \docType{methods}
 \name{domains}
 \alias{domains}
-\alias{domains,Source,character-method}
-\alias{domains,Source,missing-method}
+\alias{domains,HSDSSource,character-method}
+\alias{domains,HSDSSource,missing-method}
 \title{List files and subdirectories of a domain}
 \usage{
 domains(object, rootdir)
 
-\S4method{domains}{Source,character}(object, rootdir)
+\S4method{domains}{HSDSSource,character}(object, rootdir)
 
-\S4method{domains}{Source,missing}(object)
+\S4method{domains}{HSDSSource,missing}(object)
 }
 \arguments{
-\item{object}{An object of type Source}
+\item{object}{An object of type HSDSSource}
 
-\item{rootdir}{A slash-separated directory in the Source file system.}
+\item{rootdir}{A slash-separated directory in the HSDSSource file system.}
 }
 \value{
 a vector of domains in the rootdir
@@ -27,8 +27,8 @@ will be non-recursive. I.e., output for domain '/home/jreadey/' will
 not return the files in '/home/jreadey/HDFLabTutorial/'
 }
 \examples{
-src.hsds <- Source('http://hsdshdflab.hdfgroup.org')
-src.chan <- Source('http://h5s.channingremotedata.org:5000', 'h5serv')
+src.hsds <- HSDSSource('http://hsdshdflab.hdfgroup.org')
+src.chan <- HSDSSource('http://h5s.channingremotedata.org:5000', 'h5serv')
 domains(src.chan)
 domains(src.hsds, '/home/jreadey')
 }
