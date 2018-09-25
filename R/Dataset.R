@@ -120,6 +120,7 @@ function(dataset, indices)  {
 
 # private - perform a single fetch; indices is a vector of
 # type character with one slice per dimension.
+#' @useDynLib rhdf5client2
 getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
 
     indices <- checkSlices(dataset@shape, indices)
@@ -178,10 +179,6 @@ getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
       }
     }
 
-    # TODO: this data unpacking system is very slow, 
-    # because transfer is done element-by-element.
-    # Put it in C or find an R workaround
-
     nn <- prod(rdims)
     A <- array(rep(0, nn))
     if (transfermode == 'JSON')  {
@@ -190,19 +187,13 @@ getDataVec <- function(dataset, indices, transfermode = 'JSON')  {
 
       # multi-dimensional data is returned as a list.
       if (is.list(result))  {
-        A[1:nn] <- vapply(1:nn, function(i) {
-          idx <- csub4idx(sdims, i)
-          result[[idx]]
-        }, numeric(1))
-      } else  {  # one-dimensional data is returned as a vector, 
-        A[1:nn] <- result
+        A[1:nn] <- .Call("extractJSON", as.integer(length(sdims)), as.integer(sdims), result)
+      } else  {  # one-dimensional data is returned as a vector 
+        A[1:nn] <- as.numeric(result)
       }
-    } else if (transfermode == 'binary')  {
+    }  else if (transfermode == 'binary')  {
       result <- extractBinary(dataset@type, nn, response)
-      A[1:nn] <- vapply(1:nn, function(i) {
-        idx <- ridx4sub(sdims, csub4idx(sdims, i)) 
-        result[idx]
-      }, numeric(1))
+      A[1:nn] <- .Call("extractBin", as.integer(length(sdims)), as.integer(sdims), result)
     }
 
     # Question: should AA be forced to rdims or sdims?
