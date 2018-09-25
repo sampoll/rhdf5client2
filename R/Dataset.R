@@ -33,7 +33,7 @@ HSDSDataset <- function(file, path)  {
   shape <- response$shape$dims
   type <- list(class=response$type$class, base=response$type$base)
 
-  obj <- new("HSDSDataset", file=file, path=path, uuid=uuid,
+  new("HSDSDataset", file=file, path=path, uuid=uuid,
     shape=shape, type=type)
 }
 
