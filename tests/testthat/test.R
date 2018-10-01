@@ -8,8 +8,8 @@ test_that("Both servers found", {
   src.chan <- HSDSSource('http://h5s.channingremotedata.org:5000', 'h5serv')
   doms <- domains(src.chan)
   expect_true('neurons100k.h5s.channingremotedata.org' %in% doms) 
-  doms <- domains(src.chan, 'newsubdir/test/hdfgroup/org')
-  expect_true('newfile.newsubdir.test.h5s.channingremotedata.org' %in% doms) 
+  doms <- domains(src.chan, 'public/hdfgroup/org')
+  expect_true('tall.public.h5s.channingremotedata.org' %in% doms) 
   
 })
 
